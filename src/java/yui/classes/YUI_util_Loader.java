@@ -403,16 +403,10 @@ public class YUI_util_Loader {
                 }
 
             }
-             logger.info("skin before: "+skinName);
-
-            logger.info("this.skins before  "+this.skins);
+  
             this.skins.put(skinName, skinName);
-
-            logger.info("this.skins after  "+this.skins);
-
             String _skin[] = this.parseSkin(skinName);
 
-            logger.info("_skin[] after parse  "+Arrays.toString(_skin));
 
             if (_skin != null && _skin.length > 2) {
                 String aSkin = _skin[2];
