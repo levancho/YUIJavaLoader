@@ -609,7 +609,7 @@ public class YAHOO_util_Loader {
      * @method css_embed
      * @return {string} (e.g.) Returns the style tag(s) with the CSS inline
      */
-    public String gcss_embed() {
+    public String css_embed() {
         return this.embed(YUI_CSS, false);
     }
 
