@@ -12,13 +12,7 @@
 
 <%
 
-  YAHOO_util_Loader  loader = new YAHOO_util_Loader("2.7.0",pageContext);
 
-//Turn off rollups
-    loader.allowRollups = false;
-
-    //Specify YUI components to load
-    loader.load("yahoo", "dom", "event", "grids", "fonts", "reset","tabview");
 
 
       YUI_util_Loader  loader2= new YUI_util_Loader("2.8.0",pageContext);
@@ -27,7 +21,7 @@
     loader2.allowRollups = false;
 
     //Specify YUI components to load
-    loader2.load("yahoo", "dom", "event", "grids", "fonts", "reset","tabview");
+    loader2.load("yahoo", "dom", "event", "tabview", "grids", "fonts", "reset");
 
     //Output the tags (this call would most likely be placed in the document head)
 
@@ -37,7 +31,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>JSP Page</title>
         <!-- Loader 1 -->
-        <%=loader.tags(null,false)%>
+
 
         <!-- Loader 2 -->
          <%=loader2.tags(null,false)%>
