@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -94,7 +95,7 @@ public class YUI_util_Loader {
     // keeps track of modules that were requested that are not defined
     private Map undefined = new HashMap();
     private boolean dirty = true;
-    private Map sorted = new HashMap();
+    private Map sorted = new LinkedHashMap();
     private List accountedFor = new ArrayList();
     /**
      * A list of modules to apply the filter to.  If not supplied, all
@@ -114,7 +115,7 @@ public class YUI_util_Loader {
     private String versionKey = "_yuiversion";
     // the skin definition
     private Map skin = new HashMap();
-    private Map rollupModules = new HashMap();
+    private Map rollupModules = new LinkedHashMap();
     private List globalModules = new ArrayList();
     private Map satisfactionMap = new HashMap();
     private Map depCache = new HashMap();
@@ -570,6 +571,17 @@ public class YUI_util_Loader {
     }
 
     /**
+     * Used to output each of the required html tags (i.e.) script or link
+     * @method tags
+     * @param {string} moduleType Type of html tag to return (i.e.) js or css.  Default is both.
+     * @param {boolean} skipSort
+     * @return {string}
+     */
+    public String tags() {
+        return this.processDependencies(YUI_TAGS, null,false, false);
+    }
+
+    /**
      * Used to embed the raw JavaScript inline
      * @method script_embed
      * @return {string} Returns the script tag(s) with the JavaScript inline
@@ -700,7 +712,7 @@ public class YUI_util_Loader {
 
         if (moduleType != null) {
 
-            Map newdeps = new HashMap();
+            Map newdeps = new LinkedHashMap();
             for (String name : (Set<String>) deps.keySet()) {
 
                 Map dep = (Map) this.modules.get(name);
@@ -825,7 +837,7 @@ public class YUI_util_Loader {
 
         //Add any superseded requirements not provided by the rollup and/or rollup submodules
         if (m.containsKey(YUI_SUPERSEDES)) {
-            List<String> supersededModules = (List<String>) m.get(YUI_SUBMODULES);
+            List<String> supersededModules = (List<String>) m.get(YUI_SUPERSEDES);
             for (String supersededModule : supersededModules) {
                 logger.debug("supersededModule", supersededModule);
                 Map _supModules = (Map) this.modules.get(supersededModule);
@@ -997,13 +1009,12 @@ public class YUI_util_Loader {
         // only call this if the loader is dirty
 
         Map reqs = new LinkedHashMap();
-        Map top = new LinkedHashMap();
-        Map bot = new HashMap();
-        Map notdone = new LinkedHashMap();
+        List top = new LinkedList();
+        List<String>  notdone = new LinkedList();
         Map sorted = new LinkedHashMap();
-        Map found = new HashMap();
 
         sortDependencies_fillRequests(moduleType, reqs);
+         logger.info("reqs "+reqs);
 
         if (skipSort) {
             return this.prune(reqs, moduleType);
@@ -1011,12 +1022,13 @@ public class YUI_util_Loader {
 
         if (this.accountedFor.size() > 0 || this.loaded.size() > 0) {
             sortDependencies_removeAccountedFor(reqs);
-
+            
         } else if (this.allowRollups) {
             // First we go through the meta-modules we know about to
             // see if the replacement threshold has been met.
 
             Map _rollups = this.rollupModules;
+            logger.info("_rollups "+rollupModules);
             if (_rollups.size() > 0) {
                 for (Iterator it = _rollups.entrySet().iterator(); it.hasNext();) {
                     Map.Entry pairs = (Map.Entry) it.next();
@@ -1037,7 +1049,8 @@ public class YUI_util_Loader {
             }
         }
 
-        for (Iterator it = reqs.entrySet().iterator(); it.hasNext();) {
+        Map _reqs = new LinkedHashMap(reqs);
+        for (Iterator it = _reqs.entrySet().iterator(); it.hasNext();) {
             Map.Entry pairs = (Map.Entry) it.next();
             String name = (String) pairs.getKey();
             Object val = pairs.getValue();
@@ -1045,23 +1058,23 @@ public class YUI_util_Loader {
             Map dep = (Map) this.modules.get(name);
 
             if (dep.containsKey(YUI_SUPERSEDES)) {
-                Map override = (Map) dep.get(YUI_SUPERSEDES);
-                logger.debug("override " + name + ", val: " + val + "\n");
+                List<String> override = (List<String>) dep.get(YUI_SUPERSEDES);
 
-                for (Iterator it2 = override.entrySet().iterator(); it2.hasNext();) {
-                    Map.Entry pairs2 = (Map.Entry) it2.next();
-                    String i = (String) pairs2.getKey();
-                    Object val2 = pairs2.getValue();
+                logger.info("override " + name + ", val: " + val + "\n");
+
+                for (String  val2 : override) {
+                    //String i = (String) pairs2.getKey();
+                    //Object val2 = pairs2.getValue();
 
                     if (reqs.containsKey(val2)) {
-                        logger.debug("Removing (superceded by val) " + val2 + "\n");
+                        logger.info("Removing (superceded by val) " + val2 + "\n");
                         reqs.remove(val2);
                     }
 
-                    if (reqs.containsKey(i)) {
-                        logger.debug("Removing (superceded by i) " + val2 + "\n");
-                        reqs.remove(i);
-                    }
+//                    if (reqs.containsKey(i)) {
+//                        logger.debug("Removing (superceded by i) " + val2 + "\n");
+//                        reqs.remove(i);
+//                    }
                 }
             }
         }
@@ -1071,35 +1084,48 @@ public class YUI_util_Loader {
             Map dep = (Map) this.modules.get(name);
             // TODO is it boolean or just check if it exitst?
             if (dep.containsKey(YUI_GLOBAL) && ((Boolean) dep.get(YUI_GLOBAL)).booleanValue()) {
-                top.put(name, name);
+                top.add(name);
             } else {
-                notdone.put(name, name);
+                notdone.add(name);
             }
         }
 
         if (top.size() > 0) {
-            notdone.putAll(top);
+            notdone.addAll(top);
         }
 
         for (String name : (Set<String>) this.loaded.keySet()) {
-            logger.debug("sortDependencies 1 add to accountFor " + name);
+            logger.info("sortDependencies 1 add to accountFor " + name);
             this.accountFor(name);
         }
 
         int count = 0;
         while (notdone.size() > 0) {
-            if (count++ > 200) {
+            ++count;
+            if ( count> 200) {
                 logger.error("YUI_LOADER ERROR: sorting could not be completed, there may be a circular dependency");
-                sorted.putAll(notdone);
+                for (Object name : notdone) {
+                    sorted.put(name, name);
+                }
+                //sorted.putAll(notdone);
                 return sorted;
             }
 
-            Map _notdone = new LinkedHashMap(notdone);
+           
+            logger.info("mainLoop: ["+count+"] ");
+            logger.info("notdone size: ["+notdone.size()+"] ");
 
-            for (String name : (Set<String>) _notdone.keySet()) {
+             LinkedList<String> _notdone = new LinkedList(notdone);
+             logger.info("notdone begin : ["+notdone+"] ");
+
+
+             mainLoop:
+            for (String name : _notdone) {
+                 logger.info(" _notdone name: ["+name+"] ");
                 Map dep = (Map) this.modules.get(name);
                 Map newreqs = this.getAllDependencies(name, loadOptional, new HashMap());
 
+               
 
                 this.accountFor(name);
 
@@ -1109,45 +1135,51 @@ public class YUI_util_Loader {
                         newreqs.put(a, true);
                     }
                 }
+                
+                logger.info("<br>");
+                logger.info("printing newreqs  for "+name);
+                logger.info("newreqs size: ["+newreqs.size()+"] ");
+                logger.info("newreqs: "+newreqs);
+                logger.info("<br>");
+        
 
-               
                 if (newreqs.size() > 0) {
-                    mainLoop:
-                    for (String depname : (Set<String>) newreqs.keySet()) {
+
+                   newreqs: for (String depname : (Set<String>) newreqs.keySet()) {
                         if (this.accountedFor.contains(depname) || this.listSatisfies(depname, sorted)) {
+                            logger.info("we have acounted : ["+depname+"] ");
                         } else {
-                            Map tmp = new LinkedHashMap();
+                            List<String> tmp = new LinkedList<String>();
                             boolean _found = false;
-                            for (String newname : (Set<String>) notdone.keySet()) {
+                            for (String newname : notdone) {
                                 if (this.moduleSatisfies(depname, newname)) {
-                                    tmp.put(newname, newname);
-                                    notdone.remove(newname);
+                                    tmp.add(newname);
+                                     logger.info("notdone Old  size: ["+notdone.size()+"] ");
+                                    Object retval = notdone.remove(newname);
+                                    logger.info("removing from notdone: ["+newname+"]  "+retval+" and was remove successfull : "+(retval!=null));
+                                    logger.info("notdone New size: ["+notdone.size()+"] ");
                                     _found = true;
-                                    break;
+                                    break ;
                                 }
                             }
-
-
                             if (_found) {
-                                
-                                notdone.putAll(tmp);
+                                 logger.info("notdone before: ["+notdone+"] ");
+                                notdone.addAll(0,tmp);
+                                 logger.info("notdone after: ["+notdone+"] ");
                             } else {
                                 logger.error("YUI_LOADER ERROR: requirement for " + depname + " (needed for " + name + ") not found when sorting");
-                                notdone.put(depname, depname);
+                                notdone.add(depname);
                             }
+                             logger.info("BEFORE BREAK:  ");
                             break mainLoop;
                         }
                     }
-                }
-
-
+                }   
                 sorted.put(name, name);
+                logger.info("removing 2 :  "+name);
                 notdone.remove(name);
-             
             }
         }
-         
-
         for (String name : (Set<String>) sorted.keySet()) {
             String skinName = this.skinSetup(name);
         }
@@ -1155,18 +1187,15 @@ public class YUI_util_Loader {
 
         if (this.skins.size() > 0) {
             for (String value : (Collection<String>) skins.values()) {
-                logger.debug("[sortDependencies] putting into sorted value is " + value);
+                logger.info("[sortDependencies] putting into sorted value is " + value);
                 sorted.put(value, true);
             }
         }
-
         this.dirty = false;
         this.sorted = sorted;
-        
-        logger.debug("_sorted"+this.sorted .size());
         Map retval = this.prune(sorted, moduleType);
-
-        logger.debug("retval "+retval);
+        logger.info("_sorted"+this.sorted );
+        logger.info("retval "+retval);
         return retval;
 
     }
@@ -1210,8 +1239,8 @@ public class YUI_util_Loader {
             this.delayCache = true;
             String css = processDependencies(outputType, YUI_CSS, skipSort, showLoaded);
             String js = processDependencies(outputType, YUI_JS, skipSort, showLoaded);
-         logger.debug("CSS dependencies are :" + css);
-          logger.debug("JS dependencies are :" + js);
+         logger.info("CSS dependencies are :" + css);
+          logger.info("JS dependencies are :" + js);
             if (!this.cacheFound) {
                 this.updateCache();
             }
