@@ -399,10 +399,10 @@ public class YUI_util_Loader {
     private String[] parseSkin(String moduleName) {
         String yui_prefix = (String) this.skin.get(YUI_PREFIX);
 
-        logger.info("[parseSkin] parsing moduleName :" + moduleName);
+        logger.debug("[parseSkin] parsing moduleName :" + moduleName);
         if (moduleName.indexOf(yui_prefix) == 0) {
             String[] retval = moduleName.split("-");
-            logger.info("returning splited String :" + Arrays.toString(retval));
+            logger.debug("returning splited String :" + Arrays.toString(retval));
             return retval;
         }
         return null;
@@ -419,7 +419,7 @@ public class YUI_util_Loader {
         Map dep = (Map) this.modules.get(name);
         //$this->modules[$name];
 
-        logger.info("Checking skin for " + name);
+        logger.debug("Checking skin for " + name);
 
         if (dep != null && dep.containsKey(YUI_SKINNABLE)) {
             Map s = this.skin;
@@ -436,19 +436,18 @@ public class YUI_util_Loader {
 
                         skinName = this.formatSkin((String) over2, name);
 
-                        logger.info("skin if: " + skinName);
+                        logger.debug("skin if: " + skinName);
                     }
 
                 } else {
                     skinName = this.formatSkin((String) s.get("defaultSkin"), name);
-                    logger.info("skin else: " + skinName);
+                    logger.debug("skin else: " + skinName);
                 }
 
             }
 
             this.skins.put(skinName, skinName);
             String _skin[] = this.parseSkin(skinName);
-            logger.info("IMPORTNT" + Arrays.toString(_skin));
 
             if (_skin != null && _skin.length > 2) {
                 String aSkin = _skin[2];
@@ -528,7 +527,7 @@ public class YUI_util_Loader {
 
         if (this.loaded.containsKey(name) || this.accountedFor.contains(name)) {
         } else {
-            logger.info("putting into requests"+name);
+            logger.debug("putting into requests"+name);
             this.requests.put(name, name);
             this.dirty = true;
         }
@@ -676,7 +675,7 @@ public class YUI_util_Loader {
     }
 
     private void accountFor(String name) {
-        logger.info("adding " + name);
+        logger.debug("adding " + name);
         this.accountedFor.add(name);
         if (this.modules.containsKey(name)) {
             Map dep = (Map) this.modules.get(name);
@@ -791,16 +790,16 @@ public class YUI_util_Loader {
 
         //Add any submodule requirements not provided by the rollups
         if (m.containsKey(YUI_SUBMODULES)) {
-            logger.info("M contains YUI_SUBMODULES " + YUI_SUBMODULES);
+            logger.debug("M contains YUI_SUBMODULES " + YUI_SUBMODULES);
 
             List<Map> submodules = (List<Map>) m.get(YUI_SUBMODULES);
             if (submodules != null && submodules.size() > 0) {
-                logger.info(" submodules " + submodules);
+                logger.debug(" submodules " + submodules);
 
                 for (Map submodule : submodules) {
                     List subreqs = (List) submodule.get(YUI_REQUIRES);
                     if (subreqs != null && subreqs.size() > 0) {
-                        logger.info(" subreqs " + subreqs);
+                        logger.debug(" subreqs " + subreqs);
                         for (Object sr : subreqs) {
                             if (!mProvides.contains(sr) && !this.accountedFor.contains(sr)) {
                                 if (!reqs.containsKey(sr)) {
@@ -819,7 +818,7 @@ public class YUI_util_Loader {
         if (m.containsKey(YUI_SUPERSEDES)) {
             List<String> supersededModules = (List<String>) m.get(YUI_SUBMODULES);
             for (String supersededModule : supersededModules) {
-                logger.info("supersededModule", supersededModule);
+                logger.debug("supersededModule", supersededModule);
                 Map _supModules = (Map) this.modules.get(supersededModule);
                 if (_supModules != null && _supModules.containsKey(YUI_REQUIRES)) {
                     List yuireqs = (List) _supModules.get(YUI_REQUIRES);
@@ -910,8 +909,8 @@ public class YUI_util_Loader {
      * @return {boolean}
      */
     public boolean listSatisfies(String satisfied, Map moduleList) {
-        logger.info("listSatisfies for" + satisfied);
-        logger.info("listSatisfies " + moduleList);
+        logger.debug("listSatisfies for" + satisfied);
+        logger.debug("listSatisfies " + moduleList);
         if (moduleList.containsKey(satisfied)) {
             return true;
         } else {
@@ -952,9 +951,6 @@ public class YUI_util_Loader {
             reqs.put(g, true);
         }
 
-        logger.info("[sortDependencies] requests");
-        logger.info("" + this.requests);
-        logger.info("   ");
 
         for (String name : (Set<String>) this.requests.keySet()) {
             reqs.put(name, true);
@@ -973,14 +969,14 @@ public class YUI_util_Loader {
 
         for (Object name : this.accountedFor) {
             if (reqs.containsKey(name)) {
-                logger.info("removing satisfied req (accountedFor) " + name + "\n");
+                logger.debug("removing satisfied req (accountedFor) " + name + "\n");
                 reqs.remove(name);
             }
         }
 
         for (String name : (Set<String>) this.loaded.keySet()) {
             if (reqs.containsKey(name)) {
-                logger.info("removing satisfied req (loaded) " + name + "\n");
+                logger.debug("removing satisfied req (loaded) " + name + "\n");
                 reqs.remove(name);
             }
         }
@@ -1041,7 +1037,7 @@ public class YUI_util_Loader {
 
             if (dep.containsKey(YUI_SUPERSEDES)) {
                 Map override = (Map) dep.get(YUI_SUPERSEDES);
-                logger.info("override " + name + ", val: " + val + "\n");
+                logger.debug("override " + name + ", val: " + val + "\n");
 
                 for (Iterator it2 = override.entrySet().iterator(); it2.hasNext();) {
                     Map.Entry pairs2 = (Map.Entry) it2.next();
@@ -1049,12 +1045,12 @@ public class YUI_util_Loader {
                     Object val2 = pairs2.getValue();
 
                     if (reqs.containsKey(val2)) {
-                        logger.info("Removing (superceded by val) " + val2 + "\n");
+                        logger.debug("Removing (superceded by val) " + val2 + "\n");
                         reqs.remove(val2);
                     }
 
                     if (reqs.containsKey(i)) {
-                        logger.info("Removing (superceded by i) " + val2 + "\n");
+                        logger.debug("Removing (superceded by i) " + val2 + "\n");
                         reqs.remove(i);
                     }
                 }
@@ -1077,13 +1073,10 @@ public class YUI_util_Loader {
         }
 
         for (String name : (Set<String>) this.loaded.keySet()) {
-            logger.info("sortDependencies 1 add to accountFor " + name);
+            logger.debug("sortDependencies 1 add to accountFor " + name);
             this.accountFor(name);
         }
 
-                  logger.info("___________________");
-                logger.info("printing notdone"+notdone);
-                logger.info("___________________");
         int count = 0;
         while (notdone.size() > 0) {
             if (count++ > 200) {
@@ -1098,8 +1091,7 @@ public class YUI_util_Loader {
                 Map dep = (Map) this.modules.get(name);
                 Map newreqs = this.getAllDependencies(name, loadOptional, new HashMap());
 
-                // logger.info(" ====newreqs======  "+newreqs.size()) ;
-                
+
                 this.accountFor(name);
 
                 if (dep.containsKey(YUI_AFTER)) {
@@ -1108,23 +1100,15 @@ public class YUI_util_Loader {
                         newreqs.put(a, true);
                     }
                 }
-                // good 
-                // logger.info(" ====After accountedFor Size======  "+this.accountedFor.size()) ;
 
-                logger.info("___________________");
-                logger.info("printing newReqs"+newreqs);
-                logger.info("___________________");
+               
                 if (newreqs.size() > 0) {
                     mainLoop:
                     for (String depname : (Set<String>) newreqs.keySet()) {
-                        logger.info("  ");
                         if (this.accountedFor.contains(depname) || this.listSatisfies(depname, sorted)) {
-
                         } else {
-
-                            Map tmp = new HashMap();
+                            Map tmp = new LinkedHashMap();
                             boolean _found = false;
-
                             for (String newname : (Set<String>) notdone.keySet()) {
                                 if (this.moduleSatisfies(depname, newname)) {
                                     tmp.put(newname, newname);
@@ -1136,6 +1120,7 @@ public class YUI_util_Loader {
 
 
                             if (_found) {
+                                
                                 notdone.putAll(tmp);
                             } else {
                                 logger.error("YUI_LOADER ERROR: requirement for " + depname + " (needed for " + name + ") not found when sorting");
@@ -1145,10 +1130,14 @@ public class YUI_util_Loader {
                         }
                     }
                 }
+
+
                 sorted.put(name, name);
                 notdone.remove(name);
+             
             }
         }
+         
 
         for (String name : (Set<String>) sorted.keySet()) {
             String skinName = this.skinSetup(name);
@@ -1157,15 +1146,19 @@ public class YUI_util_Loader {
 
         if (this.skins.size() > 0) {
             for (String value : (Collection<String>) skins.values()) {
-                logger.info("[sortDependencies] putting into sorted value is " + value);
+                logger.debug("[sortDependencies] putting into sorted value is " + value);
                 sorted.put(value, true);
             }
         }
 
         this.dirty = false;
         this.sorted = sorted;
+        
+        logger.debug("_sorted"+this.sorted .size());
+        Map retval = this.prune(sorted, moduleType);
 
-        return this.prune(sorted, moduleType);
+        logger.debug("retval "+retval);
+        return retval;
 
     }
 
@@ -1197,8 +1190,8 @@ public class YUI_util_Loader {
             this.delayCache = true;
             String css = processDependencies(outputType, YUI_CSS, skipSort, showLoaded);
             String js = processDependencies(outputType, YUI_JS, skipSort, showLoaded);
-            logger.info("CSS dependencies are :" + css);
-            logger.info("JS dependencies are :" + js);
+         logger.debug("CSS dependencies are :" + css);
+          logger.debug("JS dependencies are :" + js);
             if (!this.cacheFound) {
                 this.updateCache();
             }
@@ -1208,7 +1201,7 @@ public class YUI_util_Loader {
 
         //  $json = array();
 
-        Map json = new HashMap();
+        Map json = new JSONObject();
         Map _sorted = new HashMap();
 
 //        if ($showLoaded || (!$this->dirty && count($this->sorted) > 0)) {
@@ -1217,11 +1210,15 @@ public class YUI_util_Loader {
 //            $sorted = $this->sortDependencies($moduleType, $skipSort);
 //        }
 
-        if (showLoaded || (this.dirty && this.sorted.size() > 0)) {
+        if (showLoaded || (!this.dirty && this.sorted.size() > 0)) {
             _sorted = this.prune(this.sorted, moduleType);
         } else {
             _sorted = this.sortDependencies(moduleType, skipSort);
         }
+
+
+          logger.debug("-------------------------------------------" );
+          logger.debug("dependencies moduleType  :" + moduleType+"  output type "+outputType );
 
         Iterator it = _sorted.entrySet().iterator();
         while (it.hasNext()) {
@@ -1259,12 +1256,10 @@ public class YUI_util_Loader {
                     item.put(YUI_REQUIRES, dep.get(YUI_TYPE));
                     item.put(YUI_OPTIONAL, dep.get(YUI_TYPE));
                     json.put(_name, item);
-                } else if (outputType.equals(YUI_TAGS)) {
-
+                } else  {
                     if (this.combine == true && !this.customModulesInUse) {
                         this.addToCombo(name, (String) dep.get(YUI_TYPE));
                         html.append(this.getComboLink((String) dep.get(YUI_TYPE)));
-
                     } else {
                         html.append(this.getLink(name, (String) dep.get(YUI_TYPE)));
                         html.append("\n");
@@ -1278,37 +1273,30 @@ public class YUI_util_Loader {
         if (this.cacheFound && !this.delayCache) {
             this.updateCache();
         }
-        // If the data has not been cached, and we are not running two
-        // rotations for separating css and js, cache what we have
-//        if (!$this-  > cacheFound && !$this ->  delayCache) {
-//            $this ->  updateCache();
-//        }
+
+        if(!json.isEmpty()){
+            if(this.canJSON()){
+                html.append(json.toString());
+            }else {
+                html.append("Can not ENCODE to JSON, this should not happen");
+            }
+        }
 
 
-        // TODO TODO  Finish This
-//        if (!empty($json)) {
-//            if ($this ->  canJSON()) {
-//                $html.  = json_encode($json);
-//            } else {
-//                $html.  = "<!-- JSON not available, request failed -->";
-//            }
-//        }
-        // TODO TODO  Finish above
+  
 
         // after the first pass we no longer try to use meta modules
         this.setProcessedModuleType(moduleType);
 
-        // keep track of all the stuff we loaded so that we don't reload
-        // scripts if the page makes multiple calls to tags
-        this.loaded.putAll(sorted);
-        //$this ->  loaded = array_merge($this ->  loaded, $sorted);
+        this.loaded.putAll(_sorted);
 
-        // return the raw data structure
-        // TODO TODO  Finish above
-//        if ($outputType == YUI_DATA) {
-//            return $json;
-//        }
-        // TODO TODO  Finish above
+        if(this.combine){
+            this.clearComboLink(outputType);
+        }
+
+        if(outputType.equals(YUI_DATA)){
+            return json.toString();
+        }
 
         if (this.undefined.size() > 0) {
             html.append("<!-- The following modules were requested but are not defined: ");
@@ -1316,13 +1304,30 @@ public class YUI_util_Loader {
             html.append(this.undefined);
             html.append("-->\n");
         }
-//        if (count($this ->  undefined) > 0) {
-//            $html.  = "<!-- The following modules were requested but are not defined: ".join($this ->  undefined, ",").
-//
-//        " -->\n";
-//        }
+
 
         return html.toString();
+    }
+
+    public boolean   canJSON() {
+        return true;
+    }
+
+     /**
+    * Clears the combo url of already loaded modules for a specific resource type.  Prevents
+    * duplicate loading of modules if the page makes multiple calls to tags, css, or script.
+    * @method clearComboLink
+    * @param {string} type Resource type (i.e.) YUI_JS or YUI_CSS
+    */
+   private void  clearComboLink(String type) {
+        if (type.equals(YUI_CSS)) {
+            this.cssComboLocation = null;
+        } else if (type.equals(YUI_JS)) {
+            this.jsComboLocation = null;
+        } else {
+            this.cssComboLocation = null;
+            this.jsComboLocation  = null;
+        }
     }
 
     /**
