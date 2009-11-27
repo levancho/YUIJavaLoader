@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,7 +83,7 @@ public class YUI_util_Loader {
     public boolean rollupsToTop;
     private Map processedModuleTypes = new HashMap();
     // all required modules
-    private Map requests = new HashMap();
+    private Map requests = new LinkedHashMap();
     // modules that have been been outputted via getLink()
     private Map loaded = new HashMap();
     // list of all modules superceded by the list of required modules
@@ -283,7 +284,7 @@ public class YUI_util_Loader {
                             if (this.rollupModules == null) {
                                 this.rollupModules = new HashMap();
                             }
-                            logger.debug("adding to rollupModules key=" + name + " value=" + m);
+                            logger.debug("add to rollupModules key=" + name + " value=" + m);
                             this.rollupModules.put(name, m);
 
                             JSONArray sups = (JSONArray) ((Map) m).get(YUI_SUPERSEDES);
@@ -527,6 +528,7 @@ public class YUI_util_Loader {
 
         if (this.loaded.containsKey(name) || this.accountedFor.contains(name)) {
         } else {
+            logger.info("putting into requests"+name);
             this.requests.put(name, name);
             this.dirty = true;
         }
@@ -680,7 +682,7 @@ public class YUI_util_Loader {
             Map dep = (Map) this.modules.get(name);
             Map sups = (Map) this.getSuperceded(name);
 
-         for (String supname : (Set<String>) sups.keySet()) {
+            for (String supname : (Set<String>) sups.keySet()) {
                 this.accountedFor.add(supname);
             }
         }
@@ -691,7 +693,7 @@ public class YUI_util_Loader {
         if (moduleType != null) {
 
             Map newdeps = new HashMap();
-         for (String name : (Set<String>) deps.keySet()) {
+            for (String name : (Set<String>) deps.keySet()) {
 
                 Map dep = (Map) this.modules.get(name);
                 if (moduleType.equals(dep.get(YUI_TYPE))) {
@@ -914,10 +916,7 @@ public class YUI_util_Loader {
             return true;
         } else {
             if (this.satisfactionMap.containsKey(satisfied)) {
-
-
                 Map satisfiers = (Map) satisfactionMap.get(satisfied);
-
                 for (String name : (Set<String>) satisfiers.keySet()) {
                     if (moduleList.containsKey(name)) {
                         return true;
@@ -945,17 +944,7 @@ public class YUI_util_Loader {
         return false;
     }
 
-    // TODO optimize, currently we just porting one2one
-    private Map sortDependencies(String moduleType, boolean skipSort) {
-        // only call this if the loader is dirty
-
-        Map reqs = new HashMap();
-        Map top = new HashMap();
-        Map bot = new HashMap();
-        Map notdone = new HashMap();
-        Map sorted = new HashMap();
-        Map found = new HashMap();
-
+    private void sortDependencies_fillRequests(String moduleType, Map reqs) {
         // add global dependenices so they are included when calculating rollups
         List globals = this.getGlobalDependencies(moduleType);
 
@@ -978,33 +967,45 @@ public class YUI_util_Loader {
                 }
             }
         }
+    }
 
+    private void sortDependencies_removeAccountedFor(Map reqs) {
 
-        logger.info(" ====reqs Before======  ");
-        logger.info("" + reqs);
-        logger.info(" ---------------  ");
+        for (Object name : this.accountedFor) {
+            if (reqs.containsKey(name)) {
+                logger.info("removing satisfied req (accountedFor) " + name + "\n");
+                reqs.remove(name);
+            }
+        }
+
+        for (String name : (Set<String>) this.loaded.keySet()) {
+            if (reqs.containsKey(name)) {
+                logger.info("removing satisfied req (loaded) " + name + "\n");
+                reqs.remove(name);
+            }
+        }
+
+    }
+    // TODO optimize, currently we just porting one2one
+
+    private Map sortDependencies(String moduleType, boolean skipSort) {
+        // only call this if the loader is dirty
+
+        Map reqs = new LinkedHashMap();
+        Map top = new LinkedHashMap();
+        Map bot = new HashMap();
+        Map notdone = new LinkedHashMap();
+        Map sorted = new LinkedHashMap();
+        Map found = new HashMap();
+
+        sortDependencies_fillRequests(moduleType, reqs);
 
         if (skipSort) {
             return this.prune(reqs, moduleType);
         }
 
-        logger.info(" -------accountedFor--------  " + this.accountedFor);
-        logger.info(" ---------------  " + this.loaded);
         if (this.accountedFor.size() > 0 || this.loaded.size() > 0) {
-
-            for (Object name : accountedFor) {
-                if (reqs.containsKey(name)) {
-                    logger.info("removing satisfied req (accountedFor) " + name + "\n");
-                    reqs.remove(name);
-                }
-            }
-
-            for (String name : (Set<String>) this.loaded.keySet()) {
-                if (reqs.containsKey(name)) {
-                    logger.info("removing satisfied req (loaded) " + name + "\n");
-                    reqs.remove(name);
-                }
-            }
+            sortDependencies_removeAccountedFor(reqs);
 
         } else if (this.allowRollups) {
             // First we go through the meta-modules we know about to
@@ -1020,10 +1021,8 @@ public class YUI_util_Loader {
                         reqs.put(name, true);
                         // Object dep = this.modules.get(name);
                         Map newreqs = this.getAllDependencies(name, loadOptional, reqs);
-                        Iterator it7 = newreqs.entrySet().iterator();
-                        while (it7.hasNext()) {
-                            Map.Entry pairs7 = (Map.Entry) it7.next();
-                            String newname = (String) pairs7.getKey();
+
+                        for (String newname : (Set<String>) newreqs.keySet()) {
                             if (!reqs.containsKey(newname)) {
                                 reqs.put(newname, true);
                             }
@@ -1031,12 +1030,7 @@ public class YUI_util_Loader {
                     }
                 }
             }
-
         }
-
-        logger.info(" ====reqs After loop======  ");
-        logger.info("" + reqs);
-        logger.info(" ---------------  ");
 
         for (Iterator it = reqs.entrySet().iterator(); it.hasNext();) {
             Map.Entry pairs = (Map.Entry) it.next();
@@ -1067,10 +1061,7 @@ public class YUI_util_Loader {
             }
         }
 
-
-
         // move globals to the top
-
         for (String name : (Set<String>) reqs.keySet()) {
             Map dep = (Map) this.modules.get(name);
             // TODO is it boolean or just check if it exitst?
@@ -1085,22 +1076,14 @@ public class YUI_util_Loader {
             notdone.putAll(top);
         }
 
-
         for (String name : (Set<String>) this.loaded.keySet()) {
-            logger.info("sortDependencies 1 adding to accountFor " + name);
+            logger.info("sortDependencies 1 add to accountFor " + name);
             this.accountFor(name);
         }
 
-
-        logger.info(" ====notdone======  " + notdone.size());
-        logger.info("" + notdone);
-        logger.info(" ---------------  ");
-
-
-        // $this->log("done: " . var_export($this->loaded, true));
-
-        // keep going until everything is sorted
-
+                  logger.info("___________________");
+                logger.info("printing notdone"+notdone);
+                logger.info("___________________");
         int count = 0;
         while (notdone.size() > 0) {
             if (count++ > 200) {
@@ -1109,15 +1092,14 @@ public class YUI_util_Loader {
                 return sorted;
             }
 
-            Map _notdone = new HashMap(notdone);
-            logger.info(" ====_notdone======  " + _notdone.size());
+            Map _notdone = new LinkedHashMap(notdone);
 
             for (String name : (Set<String>) _notdone.keySet()) {
                 Map dep = (Map) this.modules.get(name);
                 Map newreqs = this.getAllDependencies(name, loadOptional, new HashMap());
 
                 // logger.info(" ====newreqs======  "+newreqs.size()) ;
-                logger.info("[sortDependencies]adding to accountFor " + name);
+                
                 this.accountFor(name);
 
                 if (dep.containsKey(YUI_AFTER)) {
@@ -1129,22 +1111,17 @@ public class YUI_util_Loader {
                 // good 
                 // logger.info(" ====After accountedFor Size======  "+this.accountedFor.size()) ;
 
-
+                logger.info("___________________");
+                logger.info("printing newReqs"+newreqs);
+                logger.info("___________________");
                 if (newreqs.size() > 0) {
                     mainLoop:
                     for (String depname : (Set<String>) newreqs.keySet()) {
                         logger.info("  ");
-                        logger.info("newreq size: " + newreqs.size() + " and sorted size: " + sorted.size() + " and accountedFor size " + this.accountedFor.size());
-                        logger.info(" ====checking for ======  " + depname);
-                        logger.info(" ==== accountedFor======  " + this.accountedFor);
-
-
                         if (this.accountedFor.contains(depname) || this.listSatisfies(depname, sorted)) {
-                            logger.info("---yep, its there ---  " + depname);
-                            logger.info("--------------------------------------------");
+
                         } else {
-                            logger.info(" ====Its not there ======  " + depname + " newreq size: " + newreqs.size());
-                            logger.info("--------------------------------------------");
+
                             Map tmp = new HashMap();
                             boolean _found = false;
 
@@ -1179,8 +1156,8 @@ public class YUI_util_Loader {
 
 
         if (this.skins.size() > 0) {
-              for (String value : (Collection<String>) skins.values()) {
-                  logger.info("[sortDependencies] putting into sorted value is "+value);
+            for (String value : (Collection<String>) skins.values()) {
+                logger.info("[sortDependencies] putting into sorted value is " + value);
                 sorted.put(value, true);
             }
         }
@@ -1620,16 +1597,6 @@ public class YUI_util_Loader {
             }
         }
         return in;
-    }
-
-    private void fillreqs(Map source, Map reqs) {
-
-        Iterator it = source.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry pairs = (Map.Entry) it.next();
-            String name = (String) pairs.getKey();
-            reqs.put(name, true);
-        }
     }
     // TODO Possibly depricated Stuff
 }
