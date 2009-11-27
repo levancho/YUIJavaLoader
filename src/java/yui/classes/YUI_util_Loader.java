@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import javax.servlet.jsp.PageContext;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Cache;
@@ -179,8 +180,9 @@ public class YUI_util_Loader {
         this.cacheManager = CacheManager.create();
         this.init();
     }
-    private String j;
 
+    private String j;
+   private JSONParser parser;
     private void init() {
 
         InputStream in = loadResource(this._jsonConfigFile);
@@ -191,7 +193,7 @@ public class YUI_util_Loader {
         j = convertStreamToString(in);
         // convert json String to Java Object
 
-        JSONParser parser = new JSONParser();
+        parser= new JSONParser();
 
         try {
             logger.debug("Starting to Parse JSON String to Java ");
@@ -602,7 +604,7 @@ public class YUI_util_Loader {
      * @method script_data
      * @return {array} Returns an array of data about each of the identified JavaScript components
      */
-    public String script_data() {
+    public Map script_data() {
         return this.data(YUI_JS, false, false);
     }
 
@@ -611,7 +613,7 @@ public class YUI_util_Loader {
      * @method css_data
      * @return {array} Returns an array of data about each of the identified JavaScript components
      */
-    public String css_data() {
+    public Map css_data() {
         return this.data(YUI_CSS, false, false);
     }
 
@@ -623,14 +625,21 @@ public class YUI_util_Loader {
      * @param {boolean} skipSort
      * @return {string}
      */
-    public String data(String moduleType, boolean allowRollups, boolean skipSort) {
+    public Map data(String moduleType, boolean allowRollups, boolean skipSort) {
         if (allowRollups) {
             this.setProcessedModuleType(moduleType);
         }
 
-        String type = YUI_DATA;
+        // TOCO cache
 
-        return this.processDependencies(type, moduleType, skipSort, false);
+        String type = YUI_DATA;
+        String res = this.processDependencies(type, moduleType, skipSort, false);
+        try {
+            JSONObject obj = (JSONObject) parser.parse(res);
+             return obj;
+        } catch (ParseException ex) {
+            throw new RuntimeException("I am sorry but, I am unable to Parse String"+res+" to JSONObject");
+        }
     }
 
     /**
@@ -1179,6 +1188,17 @@ public class YUI_util_Loader {
         logger.trace("debuggin satisfactionMap Map \n\r " + this.satisfactionMap);
     }
 
+    // TODO refactor into this
+    public String processDependenciesAsString(String outputType, String moduleType, boolean skipSort, boolean showLoaded) {
+                return processDependencies(outputType,  moduleType, skipSort,showLoaded);
+    }
+
+     // TODO refactor into this
+     public JSONObject  processDependenciesAsJSON(String outputType, String moduleType, boolean skipSort, boolean showLoaded) {
+                return null;
+        // return processDependencies(outputType,  moduleType, skipSort,showLoaded);
+    }
+
     public String processDependencies(String outputType, String moduleType, boolean skipSort, boolean showLoaded) {
 
         if (outputType == null) {
@@ -1198,24 +1218,14 @@ public class YUI_util_Loader {
             return (css + js);
         }
 
-
-        //  $json = array();
-
         Map json = new JSONObject();
         Map _sorted = new HashMap();
-
-//        if ($showLoaded || (!$this->dirty && count($this->sorted) > 0)) {
-//            $sorted = $this->prune($this->sorted, $moduleType);
-//        } else {
-//            $sorted = $this->sortDependencies($moduleType, $skipSort);
-//        }
 
         if (showLoaded || (!this.dirty && this.sorted.size() > 0)) {
             _sorted = this.prune(this.sorted, moduleType);
         } else {
             _sorted = this.sortDependencies(moduleType, skipSort);
         }
-
 
           logger.debug("-------------------------------------------" );
           logger.debug("dependencies moduleType  :" + moduleType+"  output type "+outputType );
@@ -1281,9 +1291,6 @@ public class YUI_util_Loader {
                 html.append("Can not ENCODE to JSON, this should not happen");
             }
         }
-
-
-  
 
         // after the first pass we no longer try to use meta modules
         this.setProcessedModuleType(moduleType);
@@ -1590,7 +1597,7 @@ public class YUI_util_Loader {
         return sb.toString();
     }
 
-    private InputStream loadResource(String name) {
+    public  InputStream loadResource(String name) {
         logger.debug("Trying to Load Resource : " + name);
         InputStream in = getClass().getResourceAsStream(name);
         if (in == null) {

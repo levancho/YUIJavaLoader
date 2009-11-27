@@ -627,8 +627,8 @@ are "on" and "off".  The default is "autodetect".
            eternal="false"
            overflowToDisk="true"
            diskSpoolBufferSizeMB="20"
-           timeToIdleSeconds="300"
-           timeToLiveSeconds="600"
+           timeToIdleSeconds="120000"
+            timeToLiveSeconds="120000"
            memoryStoreEvictionPolicy="LFU"
             />
 
