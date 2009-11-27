@@ -49,6 +49,7 @@ loader.load("JSONModule", "customJS", "customCSS");
 	<%=loader.css()%>
 </head>
 <body>
+    <a href="http://github.com/levancho/YUIJavaLoader/blob/master/web/examples/javaloader_custom_modules_source.jsp"   target="_blank" > Source</a>
     <h1>YUI Java Loader Utility Example: Adding Custom (Non-YUI) Content with YUI Java Loader</h1>
 
     <p><a href="http://developer.yahoo.com/yui/Javaloader/">The YUI Java Loader Utility</a> is designed, of course, to
