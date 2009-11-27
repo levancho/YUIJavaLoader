@@ -1367,8 +1367,6 @@ public class YUI_util_Loader {
                 content = sb.toString();
                 logger.debug("HTML we got  is" + content);
                 c.put(new Element(urlString, content));
-                return content;
-
             } catch (IOException ex) {
                 logger.error("IO Exception " + ex.getMessage());
             } catch (Exception e) {
