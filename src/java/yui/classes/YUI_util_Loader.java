@@ -307,10 +307,12 @@ public class YUI_util_Loader {
     }
 
     private void updateCache() {
-
+        Cache cache = cacheManager.getCache(this.fullCacheKey);
+        if(cache==null){
+             cacheManager.addCache(this.fullCacheKey);
+        }
         if (this.fullCacheKey != null) {
-            cacheManager.addCache(this.fullCacheKey);
-            Cache cache = cacheManager.getCache(this.fullCacheKey);
+            cache = cacheManager.getCache(this.fullCacheKey);
             cache.put(new Element(YUI_MODULES, this.modules));
             cache.put(new Element(YUI_SKIN, this.skin));
             cache.put(new Element(YUI_ROLLUP, this.rollupModules));
