@@ -17,7 +17,7 @@
       YUI_util_Loader  loader2= new YUI_util_Loader("2.7.0",pageContext);
 
 //Turn off rollups
-    loader2.allowRollups = false;
+    loader2.allowRollups = true;
 
     //Specify YUI components to load
     loader2.load("yahoo", "dom", "event", "tabview", "grids", "fonts", "reset");

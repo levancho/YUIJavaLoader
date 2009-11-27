@@ -18,7 +18,7 @@
     //Specify YUI components to load
 
       //Turn off rollups
-    loader.allowRollups = false;
+    loader.allowRollups = true;
     loader.load("calendar");
     //Output the tags (this call would most likely be placed in the document head)
  %>
