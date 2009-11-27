@@ -22,12 +22,27 @@
 </head>
 
 <body class="yui-skin-sam">
+  <div style="margin:20px;padding:20px; background-color:#eeeeee">
+ source outlook:
+    <pre>
+     YUI_util_Loader  loader= new YUI_util_Loader("2.7.0",pageContext);
+    loader.load("calendar");
+
+    </pre>
+     insde of the head we insert css  scriplet  :
+    <pre>loader.css()</pre>
+
+       bottom of the page we excluded staticly included JS files :
+    <pre>loader.setLoaded("yahoo", "dom", "event");</pre>
+
+      and we insert javascript scriplet  :
+    <pre>loader.script()</pre>
+    
+    </div>
 
     <h1>YUI Java Loader Utility Advanced Example: Mixed Loading Methods</h1>
 
-    <p>In this example, we bring a YUI component onto the page using the <a href="http://developer.yahoo.com/yui/Javaloader/">YUI Java Loader Utility</a>.
-    This example implements YUI Java Loader via a <code>YAHOO_util_Loader</code> instance.  We include the YUI Java Loader class file, then specify in
-    configuration which component we want loaded on the page &mdash; and what we want to do once it <em>is</em> loaded.  The main difference between
+    <p>The main difference between
     this example and the previous advanced example is that we have mixed the component loading methods.  The Calender component requires the Yahoo, Dom,
     and Event modules.  In the previous example we let Java Loader bring these into the document for us.  However, in this case we placed a static
     script include into the document that brings in these resources.  We do not wish to have Java Loader duplicate the loading of these components so

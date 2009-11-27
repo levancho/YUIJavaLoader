@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.logging.Level;
 import javax.servlet.jsp.PageContext;
@@ -242,11 +243,9 @@ public class YUI_util_Loader {
             if (this._noYUI) {
                 this.modules = new HashMap();
             } else {
-                JSONObject a1 = (JSONObject) this.yui_current.get("moduleInfo");
+                this.modules  = (JSONObject) this.yui_current.get("moduleInfo");
+            }
 
-
-                // TODO check for null
-                this.modules = a1;
                 logger.debug("moduleInfo config is " + this.modules);
                 if (this.modules == null) {
                     throw new RuntimeException("Mising \'moduleInfo\'  property from config file");
@@ -302,7 +301,7 @@ public class YUI_util_Loader {
                     logger.debug("[key:]" + pairs.getKey() + " =  [Value:] " + pairs.getValue() + "  \n\r");
                 }
                 logger.debug("[init:] done first pass over Modules ");
-            }
+          
         }
     }
 
@@ -839,8 +838,8 @@ public class YUI_util_Loader {
                 }
             }
         }
-               List  debug = (List)((Map) this.modules.get("yahoo-dom-event")).get(YUI_SUPERSEDES);
-               logger.debug(" [getAllDependencies]  ["+counter+"]  Size="+debug.size());
+        
+
         //Add any superseded requirements not provided by the rollup and/or rollup submodules
         if (m.containsKey(YUI_SUPERSEDES)) {
             List<String> supersededModules = (List<String>) m.get(YUI_SUPERSEDES);
@@ -1655,6 +1654,22 @@ public class YUI_util_Loader {
             }
         }
         return in;
+    }
+
+
+    public static int generateRandomKeySuffix () {
+
+        System.out.println("Generating 10 random integers in range 0..99.");
+
+            //note a single Random object is reused here
+            Random randomGenerator = new Random();
+            int randomInt = 100;
+            for (int idx = 1; idx <= 10; ++idx){
+               randomInt+= randomGenerator.nextInt(randomInt);
+              System.out.println("Generated : " + randomInt);
+            }
+          System.out.println("Generated SUM : " + randomInt);
+        return randomInt;
     }
     // TODO Possibly depricated Stuff
 }

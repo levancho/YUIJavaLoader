@@ -11,7 +11,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-	<title>YUI PHP Loader Utility Basic Example: Loading YUI Calendar with the YUI PHP Loader Utility</title>
+	<title>YUI Java Loader Utility Basic Example: Loading YUI Calendar with the YUI Java Loader Utility</title>
 	
         <%
       YUI_util_Loader  loader= new YUI_util_Loader("2.7.0",pageContext);
@@ -26,10 +26,24 @@
 </head>
 
 <body class="yui-skin-sam">
+       <div style="margin:20px;padding:20px; background-color:#eeeeee">
+ source outlook:
+    <pre>
+   YUI_util_Loader  loader= new YUI_util_Loader("2.7.0",pageContext);
+    //Specify YUI components to load
 
-<h1>YUI PHP Loader Utility Basic Example: Loading the YUI Calendar Control with the YUI PHP Loader Utility</h1>
+    loader.allowRollups = true;
+    loader.load("calendar");
 
-<p>In this example, we bring a YUI component onto the page using the <a href="http://developer.yahoo.com/yui/phploader/">YUI PHP Loader Utility</a>. This example implements YUI PHP Loader via a <code>YAHOO_util_Loader</code> instance.  We include the YUI PHP Loader class file, then specify in configuration which component we want loaded on the page &mdash; and what we want to do once it <em>is</em> loaded.</p>
+    </pre>
+
+         inside scriplet we do :
+    <pre> loader.tags()</pre>
+       </div>
+
+
+<h1>YUI Java Loader Utility Basic Example: Loading the YUI Calendar Control with the YUI Java Loader Utility</h1>
+
 
 <div id="calendar_container"></div>
 
