@@ -305,7 +305,7 @@ public class YUI_util_Loader {
         }
     }
 
-    private void updateCache() {
+    private Cache updateCache() {
         Cache cache = cacheManager.getCache(this.fullCacheKey);
         if(cache==null){
              cacheManager.addCache(this.fullCacheKey);
@@ -323,6 +323,7 @@ public class YUI_util_Loader {
         } else {
             logger.info("[updateCache] cound not initiate Cache because cacheKey is " + fullCacheKey);
         }
+        return cache;
     }
 
     public void load(String... arguments) {
@@ -1388,15 +1389,16 @@ public class YUI_util_Loader {
      */
     public String getRemoteContent(String urlString) {
         logger.debug("[getRemoteContent] getting Remote Content for url" + urlString);
-        Cache c = cacheManager.getCache(this.fullCacheKey);
-      
+        Cache c = updateCache();
+ 
+        Element el = c .get(urlString);
         String content = null;
         HttpURLConnection connection = null;
         DataInputStream in = null;
         BufferedReader d = null;
 
         logger.debug("[getRemoteContent] Lets check if we have Content for " + urlString + " cached");
-        if (c == null ) {
+        if (el == null ) {
             try {
                 logger.debug("[getRemoteContent]  Nope, No cache, so lets crank up HTTP Connection");
                 URL url = new URL(urlString);
@@ -1449,8 +1451,7 @@ public class YUI_util_Loader {
 
             }
         } else {
-              Element remote_content = c.get(urlString);
-            content = (String) remote_content.getValue();
+            content = (String) el.getValue();
         }
         return content;
     }
