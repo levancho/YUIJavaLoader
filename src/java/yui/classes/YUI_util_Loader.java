@@ -105,7 +105,7 @@ public class YUI_util_Loader {
      * @type array
      * @default null
      */
-    private List<String> filterList;
+    private List<String> filterList = new ArrayList<String>();
     // the list of required skins
     private Map skins = new HashMap();
     private Map modules = new HashMap();
@@ -1508,7 +1508,9 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
                 // skip the filter
             } else if (this.filters.containsKey(this.filter)) {
                 YUIFilter yuif = (YUIFilter) this.filters.get(this.filter);
-                url.replaceAll(yuif.getSearch(), yuif.getReplace());
+                logger.info("url before"+url+" search for "+yuif.getSearch()+ " and replace it with "+yuif.getReplace());
+               url =  url.replace(yuif.getSearch(), yuif.getReplace());
+                 logger.info("url after"+url);
             }
 
         }

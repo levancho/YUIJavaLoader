@@ -10,8 +10,10 @@
     <%
       YUI_util_Loader  loader= new YUI_util_Loader("2.8.0",pageContext);
     //Specify YUI components to load
-
-    loader.load("yahoo", "dom","calendar", "event", "tabview", "grids", "fonts", "reset");
+loader.loadOptional= true;
+loader.allowRollups= true;
+loader.filter = YUI_util_Loader.YUI_RAW;
+    loader.load("yahoo", "dom","calendar", "event", "tabview", "grids", "fonts", "reset","logger");
     //Output the tags (this call would most likely be placed in the document head)
  %>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
