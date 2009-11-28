@@ -128,7 +128,7 @@ public class YUI_util_Loader {
      * @type string
      * @default http://yui.yahooapis.com/combo?
      */
-    private String comboBase = "http://yui.yahooapis.com/combo?";
+    public String comboBase = "http://yui.yahooapis.com/combo?";
     // additional vars used to assist with combo handling
     private String cssComboLocation = null;
     private String jsComboLocation = null;
@@ -1360,7 +1360,9 @@ public class YUI_util_Loader {
                 } else {
                     if (this.combine == true && !this.customModulesInUse) {
                         this.addToCombo(name, (String) dep.get(YUI_TYPE));
+                        html = new StringBuffer();
                         html.append(this.getComboLink((String) dep.get(YUI_TYPE)));
+                        //logger.info("combo html"+html.toString());
                     } else {
                         html.append(this.getLink(name, (String) dep.get(YUI_TYPE)));
                         html.append("\n");
