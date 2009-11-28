@@ -179,13 +179,11 @@ public class YUI_util_Loader {
         this._jsonConfigFile = "json_" + this.yuiVersion + ".txt";
 
         this.cacheManager = CacheManager.create();
+        this.initResources();
         this.init();
     }
 
-    private String j;
-   private JSONParser parser;
-    private void init() {
-
+    private void initResources() {
         InputStream in = loadResource(this._jsonConfigFile);
         if (in == null) {
             throw new RuntimeException("suitable YUI metadata file: [" + this._jsonConfigFile + "]  Could not be found or Loaded");
@@ -194,7 +192,7 @@ public class YUI_util_Loader {
         j = convertStreamToString(in);
         // convert json String to Java Object
 
-        parser= new JSONParser();
+        parser = new JSONParser();
 
         try {
             logger.debug("Starting to Parse JSON String to Java ");
@@ -213,7 +211,35 @@ public class YUI_util_Loader {
 
         this.base = (String) yui_current.get(YUI_BASE);
         logger.debug("base is " + this.base);
+        init();
+    }
 
+    private boolean validateAndCache(Cache c) {
+        logger.info("Validating and filling Cache");
+        if (c == null) {
+            return false;
+        }
+        try {
+            this.modules = (Map) c.get(YUI_MODULES).getValue();
+            this.skin = (Map) c.get(YUI_SKIN).getValue();
+            this.rollupModules = (Map) c.get(YUI_ROLLUP).getValue();
+            this.globalModules = (List) c.get(YUI_GLOBAL).getValue();
+            this.satisfactionMap = (Map) c.get(YUI_SATISFIES).getValue();
+            this.depCache = (Map) c.get(YUI_DEPCACHE).getValue();
+            this.filters = (Map) c.get(YUI_FILTERS).getValue();
+        } catch (NullPointerException npe) {
+            logger.debug("inconsistency in Cache, resetting ");
+            return false;
+        }
+
+        return true;
+
+    }
+    private String j;
+    private JSONParser parser;
+    int recoveryCounter = 0;
+
+    private void init() {
         this.comboDefaultVersion = this.yuiVersion;
 
         // testing  what caches we have so far.
@@ -222,93 +248,110 @@ public class YUI_util_Loader {
 
         this.fullCacheKey = this.base + this.cacheKey;
         Cache c = cacheManager.getCache(this.fullCacheKey);
-logger.info("this.fullCacheKey"+this.fullCacheKey);
-        if (c != null) {
-            logger.info("we have found Cache item" + c + " for Key " + this.fullCacheKey);
+        logger.info("this.fullCacheKey" + this.fullCacheKey);
+        if (cacheKey!=null && validateAndCache(c)) {
+            logger.info("we have found Cache " + c + " for Key " + this.fullCacheKey);
 
-
-            this.modules = (Map) c.get(YUI_MODULES).getValue();
-            this.skin = (Map) c.get(YUI_SKIN).getValue();
-            this.rollupModules = (Map) c.get(YUI_ROLLUP).getValue();
-            this.globalModules = (List) c.get(YUI_GLOBAL).getValue();
-            this.satisfactionMap = (Map) c.get(YUI_SATISFIES).getValue();
-            this.depCache = (Map) c.get(YUI_DEPCACHE).getValue();
-            this.filters = (Map) c.get(YUI_FILTERS).getValue();
+//        try {
+//                    this.modules = (Map) c.get(YUI_MODULES).getValue();
+//                    this.skin = (Map) c.get(YUI_SKIN).getValue();
+//                    this.rollupModules = (Map) c.get(YUI_ROLLUP).getValue();
+//                    this.globalModules = (List) c.get(YUI_GLOBAL).getValue();
+//                    this.satisfactionMap = (Map) c.get(YUI_SATISFIES).getValue();
+//                    this.depCache = (Map) c.get(YUI_DEPCACHE).getValue();
+//                    this.filters = (Map) c.get(YUI_FILTERS).getValue();
+//        } catch (NullPointerException npe){
+//            logger.debug("inconsistency in Cache, resetting ");
+//            if((++recoveryCounter)<200 ) {
+//                resetCache(this.fullCacheKey);
+//                init();
+//            }
+//        }
 
         } else {
-            logger.info("we have NOT  found Cache item  for Key " + this.fullCacheKey);
+            logger.info("we have NOT  found Cache   for Key " + this.fullCacheKey);
 
             if (this._noYUI) {
                 this.modules = new HashMap();
             } else {
-                this.modules  = (JSONObject) this.yui_current.get("moduleInfo");
+                this.modules = (JSONObject) this.yui_current.get("moduleInfo");
             }
 
-                logger.debug("moduleInfo config is " + this.modules);
-                if (this.modules == null) {
-                    throw new RuntimeException("Mising \'moduleInfo\'  property from config file");
-                }
+            logger.debug("moduleInfo config is " + this.modules);
+            if (this.modules == null) {
+                throw new RuntimeException("Mising \'moduleInfo\'  property from config file");
+            }
 
-                if (this.userSuppliedModules != null && this.userSuppliedModules.size() > 0) {
-                    this.modules.putAll(this.userSuppliedModules);
-                }
+            if (this.userSuppliedModules != null && this.userSuppliedModules.size() > 0) {
+                this.modules.putAll(this.userSuppliedModules);
+            }
 
-                this.skin = (JSONObject) this.yui_current.get(YUI_SKIN);
-                logger.debug("skin config is " + this.skin);
-                if (this.skin == null) {
-                    throw new RuntimeException("Mising" + YUI_SKIN + " property from config file");
-                }
-                this.skin.put("overrides", new ArrayList());
-                this.skin.put(YUI_PREFIX, "skin-");
+            this.skin = (JSONObject) this.yui_current.get(YUI_SKIN);
+            logger.debug("skin config is " + this.skin);
+            if (this.skin == null) {
+                throw new RuntimeException("Mising" + YUI_SKIN + " property from config file");
+            }
+            this.skin.put("overrides", new ArrayList());
+            this.skin.put(YUI_PREFIX, "skin-");
 
-                this.filters = new HashMap();
-                this.filters.put(YUI_RAW, new YUIFilter("-min.js", ".js"));
-                this.filters.put(YUI_DEBUG, new YUIFilter("-min.js", "-debug.js"));
-
-
-                Iterator it = this.modules.entrySet().iterator();
-                while (it.hasNext()) {
-                    Map.Entry pairs = (Map.Entry) it.next();
-                    String name = (String) pairs.getKey();
-                    Object m = pairs.getValue();
-                    if (m instanceof Map) {
-                        logger.debug("M is instance of Map" + m);
-                        if (((Map) m).containsKey(YUI_GLOBAL)) {
-                            logger.debug("We found " + YUI_GLOBAL + " in M ");
-                            this.globalModules.add(name);
-                        }
+            this.filters = new HashMap();
+            this.filters.put(YUI_RAW, new YUIFilter("-min.js", ".js"));
+            this.filters.put(YUI_DEBUG, new YUIFilter("-min.js", "-debug.js"));
 
 
-                        if (((Map) m).containsKey(YUI_SUPERSEDES)) {
-                            logger.debug("We found " + YUI_SUPERSEDES + " in M ");
-                            if (this.rollupModules == null) {
-                                this.rollupModules = new HashMap();
-                            }
-                            logger.debug("add to rollupModules key=" + name + " value=" + m);
-                            this.rollupModules.put(name, m);
-
-                            JSONArray sups = (JSONArray) ((Map) m).get(YUI_SUPERSEDES);
-
-                            for (Object asup : sups) {
-                                this.mapSatisfyingModule((String) asup, name);
-                            }
-                        }
-
+            Iterator it = this.modules.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry pairs = (Map.Entry) it.next();
+                String name = (String) pairs.getKey();
+                Object m = pairs.getValue();
+                if (m instanceof Map) {
+                    logger.debug("M is instance of Map" + m);
+                    if (((Map) m).containsKey(YUI_GLOBAL)) {
+                        logger.debug("We found " + YUI_GLOBAL + " in M ");
+                        this.globalModules.add(name);
                     }
 
-                    logger.debug("[key:]" + pairs.getKey() + " =  [Value:] " + pairs.getValue() + "  \n\r");
+
+                    if (((Map) m).containsKey(YUI_SUPERSEDES)) {
+                        logger.debug("We found " + YUI_SUPERSEDES + " in M ");
+                        if (this.rollupModules == null) {
+                            this.rollupModules = new HashMap();
+                        }
+                        logger.debug("add to rollupModules key=" + name + " value=" + m);
+                        this.rollupModules.put(name, m);
+
+                        JSONArray sups = (JSONArray) ((Map) m).get(YUI_SUPERSEDES);
+
+                        for (Object asup : sups) {
+                            this.mapSatisfyingModule((String) asup, name);
+                        }
+                    }
+
                 }
-                logger.debug("[init:] done first pass over Modules ");
-          
+
+                logger.debug("[key:]" + pairs.getKey() + " =  [Value:] " + pairs.getValue() + "  \n\r");
+            }
+            logger.debug("[init:] done first pass over Modules ");
+
         }
     }
 
+    private void resetCache(String key) {
+        logger.info("reseting cache");
+        cacheManager.removeCache(key);
+        updateCache();
+    }
+
     private Cache updateCache() {
-        logger.info("looking for cache"+this.fullCacheKey);
+        if(cacheKey==null){
+            logger.info("Cache is Turned off");
+            return null;
+        }
+        logger.info("[updateCache]looking for cache: " + this.fullCacheKey);
         Cache cache = cacheManager.getCache(this.fullCacheKey);
-        if(cache==null){
-            logger.info("Cache not found for "+this.fullCacheKey);
-             cacheManager.addCache(this.fullCacheKey);
+        if (cache == null) {
+            logger.info("[updateCache] Cache not found for: " + this.fullCacheKey);
+            cacheManager.addCache(this.fullCacheKey);
         }
         if (this.fullCacheKey != null) {
             cache = cacheManager.getCache(this.fullCacheKey);
@@ -532,7 +575,7 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
 
         if (this.loaded.containsKey(name) || this.accountedFor.contains(name)) {
         } else {
-            logger.debug("putting into requests"+name);
+            logger.debug("putting into requests" + name);
             this.requests.put(name, name);
             this.dirty = true;
         }
@@ -580,7 +623,7 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
      * @return {string}
      */
     public String tags() {
-        return this.processDependencies(YUI_TAGS, null,false, false);
+        return this.processDependencies(YUI_TAGS, null, false, false);
     }
 
     /**
@@ -650,9 +693,9 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
         String res = this.processDependencies(type, moduleType, skipSort, false);
         try {
             JSONObject obj = (JSONObject) parser.parse(res);
-             return obj;
+            return obj;
         } catch (ParseException ex) {
-            throw new RuntimeException("I am sorry but, I am unable to Parse String"+res+" to JSONObject");
+            throw new RuntimeException("I am sorry but, I am unable to Parse String" + res + " to JSONObject");
         }
     }
 
@@ -773,10 +816,11 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
         //$this->depCache[$key] = $sups;
         return _sups;
     }
-    int counter=0;
+    int counter = 0;
+
     private Map getAllDependencies(String mname, boolean loadOptional, Map completed) {
         counter++;
-        logger.debug(" [getAllDependencies]  ["+(counter)+"] getting for mname: " + mname+" and Map "+completed);
+        logger.debug(" [getAllDependencies]  [" + (counter) + "] getting for mname: " + mname + " and Map " + completed);
 
         String key = YUI_REQUIRES + mname;
         if (loadOptional) {
@@ -839,7 +883,7 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
                 }
             }
         }
-        
+
 
         //Add any superseded requirements not provided by the rollup and/or rollup submodules
         if (m.containsKey(YUI_SUPERSEDES)) {
@@ -958,7 +1002,7 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
     private boolean checkThreshold(Map module, Map moduleList) {
 
         if (moduleList.size() > 0 && module.containsKey(YUI_ROLLUP)) {
-            long  matched = 0;
+            long matched = 0;
             long thresh = (Long) module.get(YUI_ROLLUP);
 
             for (String moduleName : (Set<String>) moduleList.keySet()) {
@@ -1019,11 +1063,11 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
 
         Map reqs = new LinkedHashMap();
         List top = new LinkedList();
-        List<String>  notdone = new LinkedList();
+        List<String> notdone = new LinkedList();
         Map sorted = new LinkedHashMap();
 
         sortDependencies_fillRequests(moduleType, reqs);
-         logger.debug("reqs "+reqs);
+        logger.debug("reqs " + reqs);
 
         if (skipSort) {
             return this.prune(reqs, moduleType);
@@ -1031,15 +1075,15 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
 
         if (this.accountedFor.size() > 0 || this.loaded.size() > 0) {
             sortDependencies_removeAccountedFor(reqs);
-            
+
         } else if (this.allowRollups) {
             // First we go through the meta-modules we know about to
             // see if the replacement threshold has been met.
 
             Map _rollups = this.rollupModules;
-           // logger.debug("_rollups "+rollupModules);
+            // logger.debug("_rollups "+rollupModules);
 
-            logger.debug("reqs before "+reqs);
+            logger.debug("reqs before " + reqs);
             if (_rollups.size() > 0) {
                 for (Iterator it = _rollups.entrySet().iterator(); it.hasNext();) {
                     Map.Entry pairs = (Map.Entry) it.next();
@@ -1059,23 +1103,23 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
                 }
             }
 
-            logger.debug("reqs after "+reqs);
+            logger.debug("reqs after " + reqs);
         }
 
         Map _reqs = new LinkedHashMap(reqs);
         for (Iterator it = _reqs.entrySet().iterator(); it.hasNext();) {
             Map.Entry pairs = (Map.Entry) it.next();
             String name = (String) pairs.getKey();
-            logger.debug("getting module for " + name );
+            logger.debug("getting module for " + name);
             Map dep = (Map) this.modules.get(name);
 
             if (dep.containsKey(YUI_SUPERSEDES)) {
                 List<String> override = (List<String>) dep.get(YUI_SUPERSEDES);
 
-                logger.debug("override " + name );
+                logger.debug("override " + name);
                 logger.debug("overrides are " + override);
 
-                for (String  val2 : override) {
+                for (String val2 : override) {
                     //String i = (String) pairs2.getKey();
                     //Object val2 = pairs2.getValue();
 
@@ -1112,11 +1156,11 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
             this.accountFor(name);
         }
 
-            logger.debug("printing notdone: ["+notdone+"] ");
+        logger.debug("printing notdone: [" + notdone + "] ");
         int count = 0;
         while (notdone.size() > 0) {
             ++count;
-            if ( count> 200) {
+            if (count > 200) {
                 logger.error("YUI_LOADER ERROR: sorting could not be completed, there may be a circular dependency");
                 for (Object name : notdone) {
                     sorted.put(name, name);
@@ -1125,21 +1169,21 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
                 return sorted;
             }
 
-           
-            logger.debug("mainLoop: ["+count+"] ");
-            logger.debug("notdone size: ["+notdone.size()+"] ");
 
-             LinkedList<String> _notdone = new LinkedList(notdone);
-             logger.debug("notdone begin : ["+notdone+"] ");
+            logger.debug("mainLoop: [" + count + "] ");
+            logger.debug("notdone size: [" + notdone.size() + "] ");
+
+            LinkedList<String> _notdone = new LinkedList(notdone);
+            logger.debug("notdone begin : [" + notdone + "] ");
 
 
-             mainLoop:
+            mainLoop:
             for (String name : _notdone) {
-                 logger.debug(" _notdone name: ["+name+"] ");
+                logger.debug(" _notdone name: [" + name + "] ");
                 Map dep = (Map) this.modules.get(name);
                 Map newreqs = this.getAllDependencies(name, loadOptional, new HashMap());
 
-               
+
 
                 this.accountFor(name);
 
@@ -1149,48 +1193,49 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
                         newreqs.put(a, true);
                     }
                 }
-                
+
                 logger.debug("<br>");
-                logger.debug("printing newreqs  for "+name);
-                logger.debug("newreqs size: ["+newreqs.size()+"] ");
-                logger.debug("newreqs: "+newreqs);
+                logger.debug("printing newreqs  for " + name);
+                logger.debug("newreqs size: [" + newreqs.size() + "] ");
+                logger.debug("newreqs: " + newreqs);
                 logger.debug("<br>");
-        
+
 
                 if (newreqs.size() > 0) {
 
-                   newreqs: for (String depname : (Set<String>) newreqs.keySet()) {
+                    newreqs:
+                    for (String depname : (Set<String>) newreqs.keySet()) {
                         if (this.accountedFor.contains(depname) || this.listSatisfies(depname, sorted)) {
-                            logger.debug("we have acounted : ["+depname+"] ");
+                            logger.debug("we have acounted : [" + depname + "] ");
                         } else {
                             List<String> tmp = new LinkedList<String>();
                             boolean _found = false;
                             for (String newname : notdone) {
                                 if (this.moduleSatisfies(depname, newname)) {
                                     tmp.add(newname);
-                                     logger.debug("notdone Old  size: ["+notdone.size()+"] ");
+                                    logger.debug("notdone Old  size: [" + notdone.size() + "] ");
                                     Object retval = notdone.remove(newname);
-                                    logger.debug("removing from notdone: ["+newname+"]  "+retval+" and was remove successfull : "+(retval!=null));
-                                    logger.debug("notdone New size: ["+notdone.size()+"] ");
+                                    logger.debug("removing from notdone: [" + newname + "]  " + retval + " and was remove successfull : " + (retval != null));
+                                    logger.debug("notdone New size: [" + notdone.size() + "] ");
                                     _found = true;
-                                    break ;
+                                    break;
                                 }
                             }
                             if (_found) {
-                                 logger.debug("notdone before: ["+notdone+"] ");
-                                notdone.addAll(0,tmp);
-                                 logger.debug("notdone after: ["+notdone+"] ");
+                                logger.debug("notdone before: [" + notdone + "] ");
+                                notdone.addAll(0, tmp);
+                                logger.debug("notdone after: [" + notdone + "] ");
                             } else {
                                 logger.error("YUI_LOADER ERROR: requirement for " + depname + " (needed for " + name + ") not found when sorting");
                                 notdone.add(depname);
                             }
-                             logger.debug("BEFORE BREAK:  ");
+                            logger.debug("BEFORE BREAK:  ");
                             break mainLoop;
                         }
                     }
-                }   
+                }
                 sorted.put(name, name);
-                logger.debug("removing 2 :  "+name);
+                logger.debug("removing 2 :  " + name);
                 notdone.remove(name);
             }
         }
@@ -1208,8 +1253,8 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
         this.dirty = false;
         this.sorted = sorted;
         Map retval = this.prune(sorted, moduleType);
-        logger.debug("_sorted"+this.sorted );
-        logger.debug("retval "+retval);
+        logger.debug("_sorted" + this.sorted);
+        logger.debug("retval " + retval);
         return retval;
 
     }
@@ -1233,12 +1278,12 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
 
     // TODO refactor into this
     public String processDependenciesAsString(String outputType, String moduleType, boolean skipSort, boolean showLoaded) {
-                return processDependencies(outputType,  moduleType, skipSort,showLoaded);
+        return processDependencies(outputType, moduleType, skipSort, showLoaded);
     }
 
-     // TODO refactor into this
-     public JSONObject  processDependenciesAsJSON(String outputType, String moduleType, boolean skipSort, boolean showLoaded) {
-                return null;
+    // TODO refactor into this
+    public JSONObject processDependenciesAsJSON(String outputType, String moduleType, boolean skipSort, boolean showLoaded) {
+        return null;
         // return processDependencies(outputType,  moduleType, skipSort,showLoaded);
     }
 
@@ -1253,11 +1298,11 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
             this.delayCache = true;
             String css = processDependencies(outputType, YUI_CSS, skipSort, showLoaded);
             String js = processDependencies(outputType, YUI_JS, skipSort, showLoaded);
-         logger.debug("CSS dependencies are :" + css);
-          logger.debug("JS dependencies are :" + js);
-          
-           this.updateCache();
-           
+            logger.debug("CSS dependencies are :" + css);
+            logger.debug("JS dependencies are :" + js);
+
+            this.updateCache();
+
             return (css + js);
         } else {
             this.delayCache = false;
@@ -1272,8 +1317,8 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
             _sorted = this.sortDependencies(moduleType, skipSort);
         }
 
-          logger.debug("-------------------------------------------" );
-          logger.debug("dependencies moduleType  :" + moduleType+"  output type "+outputType );
+        logger.debug("-------------------------------------------");
+        logger.debug("dependencies moduleType  :" + moduleType + "  output type " + outputType);
 
         Iterator it = _sorted.entrySet().iterator();
         while (it.hasNext()) {
@@ -1312,7 +1357,7 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
                     item.put(YUI_REQUIRES, dep.get(YUI_TYPE));
                     item.put(YUI_OPTIONAL, dep.get(YUI_TYPE));
                     json.put(_name, item);
-                } else  {
+                } else {
                     if (this.combine == true && !this.customModulesInUse) {
                         this.addToCombo(name, (String) dep.get(YUI_TYPE));
                         html.append(this.getComboLink((String) dep.get(YUI_TYPE)));
@@ -1330,10 +1375,10 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
             this.updateCache();
         }
 
-        if(!json.isEmpty()){
-            if(this.canJSON()){
+        if (!json.isEmpty()) {
+            if (this.canJSON()) {
                 html.append(json.toString());
-            }else {
+            } else {
                 html.append("Can not ENCODE to JSON, this should not happen");
             }
         }
@@ -1343,11 +1388,11 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
 
         this.loaded.putAll(_sorted);
 
-        if(this.combine){
+        if (this.combine) {
             this.clearComboLink(outputType);
         }
 
-        if(outputType.equals(YUI_DATA)){
+        if (outputType.equals(YUI_DATA)) {
             return json.toString();
         }
 
@@ -1362,24 +1407,24 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
         return html.toString();
     }
 
-    public boolean   canJSON() {
+    public boolean canJSON() {
         return true;
     }
 
-     /**
-    * Clears the combo url of already loaded modules for a specific resource type.  Prevents
-    * duplicate loading of modules if the page makes multiple calls to tags, css, or script.
-    * @method clearComboLink
-    * @param {string} type Resource type (i.e.) YUI_JS or YUI_CSS
-    */
-   private void  clearComboLink(String type) {
+    /**
+     * Clears the combo url of already loaded modules for a specific resource type.  Prevents
+     * duplicate loading of modules if the page makes multiple calls to tags, css, or script.
+     * @method clearComboLink
+     * @param {string} type Resource type (i.e.) YUI_JS or YUI_CSS
+     */
+    private void clearComboLink(String type) {
         if (type.equals(YUI_CSS)) {
             this.cssComboLocation = null;
         } else if (type.equals(YUI_JS)) {
             this.jsComboLocation = null;
         } else {
             this.cssComboLocation = null;
-            this.jsComboLocation  = null;
+            this.jsComboLocation = null;
         }
     }
 
@@ -1392,15 +1437,17 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
     public String getRemoteContent(String urlString) {
         logger.debug("[getRemoteContent] getting Remote Content for url" + urlString);
         Cache c = updateCache();
- 
-        Element el = c .get(urlString);
+        Element el=null;
+        if(c!=null){
+            el = c.get(urlString);
+        }
         String content = null;
         HttpURLConnection connection = null;
         DataInputStream in = null;
         BufferedReader d = null;
 
         logger.debug("[getRemoteContent] Lets check if we have Content for " + urlString + " cached");
-        if (el == null ) {
+        if (el == null) {
             try {
                 logger.debug("[getRemoteContent]  Nope, No cache, so lets crank up HTTP Connection");
                 URL url = new URL(urlString);
@@ -1408,8 +1455,8 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
                 //connection.setRequestMethod("POST");
                 connection.setInstanceFollowRedirects(true);
                 connection.setDoOutput(true);
-                connection.setDoInput(true); 
-                connection.setUseCaches(false); 
+                connection.setDoInput(true);
+                connection.setUseCaches(false);
                 connection.setReadTimeout(10000);
                 connection.connect();
 
@@ -1508,9 +1555,9 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
                 // skip the filter
             } else if (this.filters.containsKey(this.filter)) {
                 YUIFilter yuif = (YUIFilter) this.filters.get(this.filter);
-                logger.info("url before"+url+" search for "+yuif.getSearch()+ " and replace it with "+yuif.getReplace());
-               url =  url.replace(yuif.getSearch(), yuif.getReplace());
-                 logger.info("url after"+url);
+                // logger.info("url before"+url+" search for "+yuif.getSearch()+ " and replace it with "+yuif.getReplace());
+                url = url.replace(yuif.getSearch(), yuif.getReplace());
+                // logger.info("url after"+url);
             }
 
         }
@@ -1597,8 +1644,8 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
             return "cURL and/or APC was not detected, so the content can't be embedded";
         }
 
-      String url =this.getUrl(name);
-      return this.getRemoteContent(url);
+        String url = this.getUrl(name);
+        return this.getRemoteContent(url);
         //$url = $this->getUrl($name);
     }
     private boolean embedAvail = true;
@@ -1654,7 +1701,7 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
         return sb.toString();
     }
 
-    public  InputStream loadResource(String name) {
+    public InputStream loadResource(String name) {
         logger.debug("Trying to Load Resource : " + name);
         InputStream in = getClass().getResourceAsStream(name);
         if (in == null) {
@@ -1666,23 +1713,19 @@ logger.info("this.fullCacheKey"+this.fullCacheKey);
         return in;
     }
 
-
-    public static int generateRandomKeySuffix () {
+    public static int generateRandomKeySuffix() {
 
         System.out.println("Generating 10 random integers in range 0..99.");
 
-            //note a single Random object is reused here
-            Random randomGenerator = new Random();
-            int randomInt = 100;
-            for (int idx = 1; idx <= 10; ++idx){
-               randomInt+= randomGenerator.nextInt(randomInt);
-              System.out.println("Generated : " + randomInt);
-            }
-          System.out.println("Generated SUM : " + randomInt);
+        //note a single Random object is reused here
+        Random randomGenerator = new Random();
+        int randomInt = 100;
+        for (int idx = 1; idx <= 10; ++idx) {
+            randomInt += randomGenerator.nextInt(randomInt);
+            System.out.println("Generated : " + randomInt);
+        }
+        System.out.println("Generated SUM : " + randomInt);
         return randomInt;
     }
-
-
-
     // TODO Possibly depricated Stuff
 }

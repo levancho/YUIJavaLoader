@@ -7,19 +7,22 @@ package yui.classes;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 import net.sf.ehcache.Statistics;
-import net.sf.ehcache.management.CacheStatistics;
 
 /**
  *
  * @author leo
  */
 public class YUILoaderCacheStatistics {
+
+     private static final long  MEGABYTE = 1024L * 1024L;
+
+
+      private static final long  KILOBYTE = 1024L ;
+
 
     private CacheManager cacheManager;
     private StringBuffer stats;
@@ -75,17 +78,27 @@ public class YUILoaderCacheStatistics {
         for (String e : k) {
              sb.append("<hr>");
             Element el = cache.get(e);
-            sb.append("Stats For Element: <span style=\"color:green;font-weight:bold\"> [" + e + "]</span> ");
-                   sb.append("<br>");
-            sb.append("- LastAccessTime: " + formatDate(el.getLastAccessTime()));
-                   sb.append("<br>");
-            sb.append("- LastUpdateTime:  " +formatDate( el.getLastUpdateTime()));
-                   sb.append("<br>");
-            sb.append("- Hit Count: " + el.getHitCount());
-                   sb.append("<br>");
-            sb.append("- ExpirationTime: " + formatDate(el.getExpirationTime()));
-                   sb.append("<br>");
-           sb.append("<hr>");
+
+            if(el!=null){
+                sb.append("Stats For Element: <span style=\"color:green;font-weight:bold\"> [" + e + "]</span> ");
+                       sb.append("<br>");
+                sb.append("- LastAccessTime: " + formatDate(el.getLastAccessTime()));
+                       sb.append("<br>");
+                sb.append("- LastUpdateTime:  " +formatDate( el.getLastUpdateTime()));
+                       sb.append("<br>");
+                sb.append("- Hit Count: " + el.getHitCount());
+                       sb.append("<br>");
+                     sb.append("- Serialized Size: " + formatBytes(el.getSerializedSize()));
+                       sb.append("<br>");    
+
+                sb.append("- ExpirationTime: " + formatDate(el.getExpirationTime()));
+                       sb.append("<br>");
+               sb.append("<hr>");
+            } else {
+                sb.append("<br>");
+                sb.append("Inconsistent/Missing Cache Element for: "+e);
+                sb.append("<br>");
+            }
         }
      sb.append("<br>");
       sb.append("<br>");
@@ -113,5 +126,11 @@ public class YUILoaderCacheStatistics {
 //              assertEquals(1, cache.getMemoryStoreHitCount());
 //             assertEquals(1, cache.getMissCountExpired());
 //             assertEquals(1, cache.getMissCountNotFound());
+    }
+
+    private String formatBytes (long b){
+        if(b>KILOBYTE)return b/KILOBYTE+" KB";
+
+        return b+" Bytes";
     }
 }
