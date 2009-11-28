@@ -4,6 +4,8 @@
  */
 package yui.classes;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,39 +47,48 @@ public class YUILoaderCacheStatistics {
         return stats.toString();
     }
 
+    private String formatDate (long mil){
+        if(mil==0)return "not updated";
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm");
+        Date resultdate = new Date(mil);
+        return(sdf.format(resultdate));
+    }
+
     public void testStatistics(Cache cache, StringBuffer sb) throws InterruptedException {
         //Set size so the second element overflows to disk.
         Statistics stats = cache.getStatistics();
-         sb.append("<hr>");
-        sb.append("---------Stats For: " + cache.getName() + "-------------------------------------");
+        sb.append("---------Stats For Cache: <span style=\"color:green;font-weight:bold\">[" + cache.getName() + "]</span> -------------------------------------");
         sb.append("<br>");
-        sb.append("[" + cache.getName() + "] ObjectCount " + stats.getObjectCount());
+        sb.append("ObjectCount: " + stats.getObjectCount());
          sb.append("<br>");
-        sb.append("[" + cache.getName() + "] Hit Count " + stats.getCacheHits());
+        sb.append(" Hit Count: " + stats.getCacheHits());
          sb.append("<br>");
-        sb.append("[" + cache.getName() + "] Miss Count " + stats.getCacheMisses());
+        sb.append("Miss Count: " + stats.getCacheMisses());
          sb.append("<br>");
-        sb.append("[" + cache.getName() + "] Eviction Count " + stats.getEvictionCount());
+        sb.append(" Eviction Count: " + stats.getEvictionCount());
          sb.append("<br>");
-        sb.append("[" + cache.getName() + "] In Memory Hits " + stats.getInMemoryHits());
+        sb.append(" In Memory Hits: " + stats.getInMemoryHits());
          sb.append("<br>");
-  
+       
         List<String> k = cache.getKeys();
         for (String e : k) {
+             sb.append("<hr>");
             Element el = cache.get(e);
-            sb.append("------------Stats For Element :[" + e + "]-------------------------------------");
+            sb.append("Stats For Element: <span style=\"color:green;font-weight:bold\"> [" + e + "]</span> ");
                    sb.append("<br>");
-            sb.append("-[" + e + "]- LastAccessTime " + el.getLastAccessTime());
+            sb.append("- LastAccessTime: " + formatDate(el.getLastAccessTime()));
                    sb.append("<br>");
-            sb.append("-[" + e + "]- LastUpdateTime  " + el.getLastUpdateTime());
+            sb.append("- LastUpdateTime:  " +formatDate( el.getLastUpdateTime()));
                    sb.append("<br>");
-            sb.append("-[" + e + "]- Hit Count " + el.getHitCount());
+            sb.append("- Hit Count: " + el.getHitCount());
                    sb.append("<br>");
-            sb.append("-[" + e + "]- ExpirationTime " + el.getExpirationTime());
+            sb.append("- ExpirationTime: " + formatDate(el.getExpirationTime()));
                    sb.append("<br>");
+           sb.append("<hr>");
         }
+     sb.append("<br>");
+      sb.append("<br>");
       sb.append("===============================================================");
-        sb.append("<hr>");
 //               assertEquals(1, cache.getDiskStoreHitCount());
 //              assertEquals(0, cache.getMemoryStoreHitCount());
 //            assertEquals(0, cache.getMissCountExpired());
