@@ -111,7 +111,6 @@ public class YUI_util_Loader {
     private Map modules = new HashMap();
     private String fullCacheKey;
     private Map baseOverrides = new HashMap();
-    private boolean cacheFound = false;
     private boolean delayCache = false;
     private String versionKey = "_yuiversion";
     // the skin definition
@@ -223,10 +222,9 @@ public class YUI_util_Loader {
 
         this.fullCacheKey = this.base + this.cacheKey;
         Cache c = cacheManager.getCache(this.fullCacheKey);
-
+logger.info("this.fullCacheKey"+this.fullCacheKey);
         if (c != null) {
-            logger.debug("we have found Cache item" + c + " for Key " + this.fullCacheKey);
-            this.cacheFound = true;
+            logger.info("we have found Cache item" + c + " for Key " + this.fullCacheKey);
 
 
             this.modules = (Map) c.get(YUI_MODULES).getValue();
@@ -238,7 +236,7 @@ public class YUI_util_Loader {
             this.filters = (Map) c.get(YUI_FILTERS).getValue();
 
         } else {
-            logger.debug("we have NOT  found Cache item  for Key " + this.fullCacheKey);
+            logger.info("we have NOT  found Cache item  for Key " + this.fullCacheKey);
 
             if (this._noYUI) {
                 this.modules = new HashMap();
@@ -306,8 +304,10 @@ public class YUI_util_Loader {
     }
 
     private Cache updateCache() {
+        logger.info("looking for cache"+this.fullCacheKey);
         Cache cache = cacheManager.getCache(this.fullCacheKey);
         if(cache==null){
+            logger.info("Cache not found for "+this.fullCacheKey);
              cacheManager.addCache(this.fullCacheKey);
         }
         if (this.fullCacheKey != null) {
@@ -1255,10 +1255,12 @@ public class YUI_util_Loader {
             String js = processDependencies(outputType, YUI_JS, skipSort, showLoaded);
          logger.debug("CSS dependencies are :" + css);
           logger.debug("JS dependencies are :" + js);
-            if (!this.cacheFound) {
-                this.updateCache();
-            }
+          
+           this.updateCache();
+           
             return (css + js);
+        } else {
+            this.delayCache = false;
         }
 
         Map json = new JSONObject();
@@ -1324,7 +1326,7 @@ public class YUI_util_Loader {
 
         }
 
-        if (this.cacheFound && !this.delayCache) {
+        if (!this.delayCache) {
             this.updateCache();
         }
 

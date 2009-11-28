@@ -57,6 +57,7 @@ public class YUILoaderCacheStatistics {
     public void testStatistics(Cache cache, StringBuffer sb) throws InterruptedException {
         //Set size so the second element overflows to disk.
         Statistics stats = cache.getStatistics();
+        sb.append("<br>");
         sb.append("---------Stats For Cache: <span style=\"color:green;font-weight:bold\">[" + cache.getName() + "]</span> -------------------------------------");
         sb.append("<br>");
         sb.append("ObjectCount: " + stats.getObjectCount());
