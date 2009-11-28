@@ -1292,7 +1292,8 @@ public class YUI_util_Loader {
                     //html.append(this.getRaw(name));
 
                     //TODO TASk need to verify this
-                    Map subdeps = (Map) dep.get(YUI_TYPE);
+
+                    String subdeps = (String) dep.get(YUI_TYPE);
                     String _url = this.getUrl(name);
                     List prov = this.getProvides(name);
                     Map subsubsub = new HashMap();
@@ -1388,21 +1389,23 @@ public class YUI_util_Loader {
     public String getRemoteContent(String urlString) {
         logger.debug("[getRemoteContent] getting Remote Content for url" + urlString);
         Cache c = cacheManager.getCache(this.fullCacheKey);
-        Element remote_content = c.get(urlString);
+      
         String content = null;
         HttpURLConnection connection = null;
         DataInputStream in = null;
         BufferedReader d = null;
 
         logger.debug("[getRemoteContent] Lets check if we have Content for " + urlString + " cached");
-        if (remote_content == null || remote_content.getValue() == null) {
+        if (c == null ) {
             try {
                 logger.debug("[getRemoteContent]  Nope, No cache, so lets crank up HTTP Connection");
                 URL url = new URL(urlString);
                 connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("POST");
+                //connection.setRequestMethod("POST");
                 connection.setInstanceFollowRedirects(true);
-                //connection.setDoOutput(true);
+                connection.setDoOutput(true);
+                connection.setDoInput(true); 
+                connection.setUseCaches(false); 
                 connection.setReadTimeout(10000);
                 connection.connect();
 
@@ -1446,6 +1449,7 @@ public class YUI_util_Loader {
 
             }
         } else {
+              Element remote_content = c.get(urlString);
             content = (String) remote_content.getValue();
         }
         return content;
@@ -1588,8 +1592,9 @@ public class YUI_util_Loader {
             return "cURL and/or APC was not detected, so the content can't be embedded";
         }
 
+      String url =this.getUrl(name);
+      return this.getRemoteContent(url);
         //$url = $this->getUrl($name);
-        return null;
     }
     private boolean embedAvail = true;
 
