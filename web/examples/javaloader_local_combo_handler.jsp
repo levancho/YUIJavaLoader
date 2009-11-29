@@ -36,7 +36,7 @@
     <%=loader.css()%>
 </head>
 <body class="yui-skin-sam">
-    <h4 style="color:red"> TODO Not Fully Ready Yet, CSS part needs some work with IMage corrections, as you see Editor look sugly </h4>
+    <h4 >Almost ready, CSS part needs some work with Image url corrections, </h4>
  <a href="http://github.com/levancho/YUIJavaLoader/blob/master/web/examples/javaloader_local_combo_handler.jsp"   target="_blank" > Source</a>
 
 <h1>Calendar Plugin</h1>

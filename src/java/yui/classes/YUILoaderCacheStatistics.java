@@ -61,7 +61,7 @@ public class YUILoaderCacheStatistics {
         //Set size so the second element overflows to disk.
         Statistics stats = cache.getStatistics();
         sb.append("<br>");
-        sb.append("---------Stats For Cache: <span style=\"color:green;font-weight:bold\">[" + cache.getName() + "]</span> -------------------------------------");
+        sb.append("<span style=\"font-size:20px\">Stats For Cache: <span style=\"color:green;font-weight:bold;font-size:20px\">[" + cache.getName() + "]</span> -------------------------------------</span>");
         sb.append("<br>");
         sb.append("ObjectCount: " + stats.getObjectCount());
          sb.append("<br>");

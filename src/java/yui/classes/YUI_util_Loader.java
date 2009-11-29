@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.logging.Level;
 import javax.servlet.jsp.PageContext;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Cache;
@@ -151,6 +150,8 @@ public class YUI_util_Loader {
     private String _jsonConfigFile;
     CacheManager cacheManager;
     private boolean customModulesInUse;
+
+     YUI_util_Loader(){}
 
     public YUI_util_Loader(String version, PageContext context) {
         this(version, context, "");
@@ -556,7 +557,7 @@ public class YUI_util_Loader {
      */
     public boolean loadSingle(String name) {
 
-        logger.debug("loading single: " + name);
+        logger.info("loading single: " + name);
         String[] skinz = this.parseSkin(name);
 
         logger.debug("skinz are: " + Arrays.toString(skinz));
@@ -1346,10 +1347,17 @@ public class YUI_util_Loader {
                     List prov = this.getProvides(name);
                     Map subsubsub = new HashMap();
                     subsubsub.put(_url, prov);
-                    json.put(subdeps, subsubsub);
+                    Object m = json.get(subdeps);
+                    if(m!=null){
+                        ((Map)m).putAll(subsubsub);
+                    }else {
+                        json.put(subdeps, subsubsub);
+                    }
 
                 } else if (outputType.equals(YUI_FULLJSON)) {
                     String _name = (String) dep.get(YUI_NAME);
+                    logger.info("name for Dep "+dep+" is "+_name);
+                    
                     Map item = new HashMap();
                     item.put(YUI_TYPE, dep.get(YUI_TYPE));
                     item.put(YUI_URL, dep.get(YUI_URL));
@@ -1357,6 +1365,8 @@ public class YUI_util_Loader {
                     item.put(YUI_REQUIRES, dep.get(YUI_TYPE));
                     item.put(YUI_OPTIONAL, dep.get(YUI_TYPE));
                     json.put(_name, item);
+                    logger.info("name for Dep "+json.size());
+                    logger.info("name for Dep "+json);
                 } else {
                     if (this.combine == true && !this.customModulesInUse) {
                         this.addToCombo(name, (String) dep.get(YUI_TYPE));
@@ -1373,6 +1383,9 @@ public class YUI_util_Loader {
 
         }
 
+        // TODO there is a bug if we try to load same resource secod time
+        // inside loaded and never gets fetched so JSOn is emtyp need to fix.
+        // right now I just check for NPE
         if (!this.delayCache) {
             this.updateCache();
         }
@@ -1702,6 +1715,7 @@ public class YUI_util_Loader {
 
         return sb.toString();
     }
+
 
     public InputStream loadResource(String name) {
         logger.debug("Trying to Load Resource : " + name);
