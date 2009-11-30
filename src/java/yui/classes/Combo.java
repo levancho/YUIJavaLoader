@@ -8,12 +8,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -42,15 +39,15 @@ public class Combo {
     CacheManager cacheManager;
 
     public String server(boolean includeRequestURI) {
-        logger.info("calculating server url");
+        logger.debug("calculating server url");
         String path = request.getContextPath();
-        logger.info("calculating server url path" + path);
+        logger.debug("calculating server url path" + path);
         String basePath = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-        logger.info("calculating server url basePath" + basePath);
+        logger.debug("calculating server url basePath" + basePath);
         if (includeRequestURI) {
             basePath += path + "/";
         }
-        logger.info("calculating server url all" + basePath);
+        logger.debug("calculating server url all" + basePath);
         // we could maybe try request.getRemoteHost()
 
         return basePath;
@@ -86,17 +83,17 @@ public class Combo {
         String[] yuiFiles = null;
         String[] metainfo = null;
         String yuiVersion = null;
-        logger.info("starting init");
+        logger.debug("starting init");
         try {
             if (_q != null && !_q.trim().equals("")) {
                 this.queryString = URLDecoder.decode(_q, "UTF-8");
             }
 
-            logger.info("queryStringis " + queryString);
+            logger.debug("queryStringis " + queryString);
             if (!queryString.equals("")) {
                 yuiFiles = queryString.split("&");
                 if (yuiFiles == null || yuiFiles.length == 0) {
-                    logger.info("thre is nothing in query?" + queryString);
+                    logger.debug("thre is nothing in query?" + queryString);
                     return;
                 }
 
@@ -114,20 +111,20 @@ public class Combo {
 
                 Cache c = cacheManager.getCache(cacheKey);
                 if (c.isKeyInCache(serverURI + contentType)) {
-                    logger.info("we found cache " + (serverURI + contentType));
+                    logger.trace("we found cache " + (serverURI + contentType));
                     // TODO when we turn this into tag we send this  puppy to client.
 
 
 
-                    logger.info(c.get(serverURI + contentType).toString());
+                    logger.debug(c.get(serverURI + contentType).toString());
 
                 } else {
-                    logger.info("we dont have cache for  " + serverURI);
+                    logger.debug("we dont have cache for  " + serverURI);
                     metainfo = yuiFiles[0].split("/");
-                    logger.info("metainfo:  " + Arrays.toString(metainfo));
+                    logger.debug("metainfo:  " + Arrays.toString(metainfo));
 
                     yuiVersion = metainfo[0];
-                    logger.info("yuiVersion:  " + yuiVersion);
+                    logger.debug("yuiVersion:  " + yuiVersion);
 
                     YUI_util_Loader loader = new YUI_util_Loader(yuiVersion, context);
                     // todo do we need this? dont think so
@@ -137,10 +134,10 @@ public class Combo {
 
                     //Detect and set a filter as needed (defaults to minified version)
                     if (queryString.indexOf("-debug.js") != -1) {
-                        logger.info("Found debug files ");
+                        logger.debug("Found debug files ");
                         loader.filter = YUI_util_Loader.YUI_DEBUG;
                     } else if ((queryString.indexOf("-min.js") == -1) && (queryString.indexOf("-debug.js") == -1)) {
-                        logger.info("assuming raw files");
+                        logger.debug("assuming raw files");
                         loader.filter = YUI_util_Loader.YUI_RAW;
                     }
 
@@ -151,80 +148,85 @@ public class Combo {
                     //            die('<!-- Unable to locate the YUI build directory! -->');
                     //        }
                     String raw = "";
-                    String[] yuiComponents = new String[1];
-                    logger.info("Iterating through yuiFiles: " + Arrays.toString(yuiFiles));
+                    String yuiComponent = "";
+                    logger.debug("Iterating through yuiFiles: " + Arrays.toString(yuiFiles));
                     for (int i = 0; i < yuiFiles.length; i++) {
                         String yuiFile = yuiFiles[i];
-                        logger.info("for yuiFile: " + yuiFile);
+                        logger.debug("for yuiFile: " + yuiFile);
 
                         String parts[] = yuiFile.split("/");
 
 
                         if (parts != null && parts.length >= 3) {
-                            logger.info("for yuiFile Parts : " + Arrays.toString(parts));
-                            yuiComponents[0] = parts[2];
+                            logger.debug("for yuiFile Parts : " + Arrays.toString(parts));
+                            yuiComponent = parts[2];
 
                         } else {
-                            logger.info("<!-- Unable to determine module name! -->");
+                            logger.error("<!-- Unable to determine module name! -->");
                             throw new RuntimeException("<!-- Unable to determine module name! -->");
                         }
 
-                        logger.info("loading following Components :  " + yuiComponents);
-                        loader.load(yuiComponents);
-                        logger.info("contentType is :  " + contentType);
+                        logger.debug("loading following Components :  " + yuiComponent);
+                        loader.loadSingle(yuiComponent);
+                        logger.debug("contentType is :  " + contentType);
 
                         if (contentType.equals("application/x-javascript")) {
                             raw += loader.script_raw();
-                            logger.info("fetching raw from loader :  " + raw);
+                            logger.trace("fetching raw from loader :  " + raw);
                             // TODO display
                         } else {
-
-                            Map cssResourceList = loader.css_data();
-                            logger.info("fetching css_data from loader :  " + cssResourceList);
+                    Map  cssResourceList = loader.css_data();
+                            
+                            logger.debug("fetching css_data from loader :  " + cssResourceList);
 
                             Map cssResourceListCSS = (Map) cssResourceList.get("css");
 
-                            logger.info("cssResourceListCSS is :  " + cssResourceListCSS);
-                            for (String key : (Set<String>) cssResourceListCSS.keySet()) {
-                                // TODO finish
-                                logger.info("key  is :  " + key);
-                                crtResourceBase = key.substring(0, (key.lastIndexOf("/") + 1));
-                                logger.info("crtResourceBase  is :  " + crtResourceBase);
+                            logger.debug("cssResourceListCSS is :  " + cssResourceListCSS);
+                            if(cssResourceListCSS!=null){
+                                for (String key : (Set<String>) cssResourceListCSS.keySet()) {
+                                    // TODO finish
+                                    logger.debug("key  is :  " + key);
+                                    crtResourceBase = key.substring(0, (key.lastIndexOf("/") + 1));
+                                    logger.debug("crtResourceBase  is :  " + crtResourceBase);
 
-                                String crtResourceContent = loader.getRemoteContent(key);
-                                // TODO Image path correction
+                                    String crtResourceContent = loader.getRemoteContent(key);
+                                    // TODO Image path correction
 
-                                raw += crtResourceContent;
+                                    raw += crtResourceContent;
 
+                                }
                             }
-                            logger.info("rawCSS before: " + raw);
+                            logger.trace("rawCSS before: " + raw);
                             raw = raw.replace("/build/build/", "/build/");
-                            logger.info("rawCSS after: " + raw);
+                            logger.trace("rawCSS after: " + raw);
                         }
                     }
                     c.put(new Element(serverURI + contentType, raw));
+//                        YUIcompressorAPI api =  new YUIcompressorAPI();
+//                        YUIcompressorAPI.Config  conf= api .new Config(null);
+                   
                 }
             }
         } catch (UnsupportedEncodingException ex) {
-            logger.info(ex.getMessage());
+            logger.error(ex.getMessage());
             ex.printStackTrace();
         }
     }
 
     public String getRaw() {
-        logger.info("[getRaw] checking cache");
+        logger.debug("[getRaw] checking cache");
         if (serverURI == null || contentType == null || !cacheManager.cacheExists(cacheKey)) {
-            logger.info("[getRaw] we have to ReInit, something was wrong");
+            logger.debug("[getRaw] we have to ReInit, something was wrong");
             init();
         }
 
         Cache c = cacheManager.getCache(cacheKey);
 
         if (c.isKeyInCache(serverURI + contentType)) {
-            logger.info("[getRaw] we found cache for " + serverURI + contentType);
+            logger.debug("[getRaw] we found cache for " + serverURI + contentType);
             return (String) ((Element) c.get(serverURI + contentType)).getValue();
         } else {
-            logger.info("[getRaw] cache was not found, something is wrong" + serverURI + contentType);
+            logger.debug("[getRaw] cache was not found, something is wrong" + serverURI + contentType);
             throw new RuntimeException("[getRaw] cache was not found, something is wrong" + serverURI + contentType);
         }
     }

@@ -212,7 +212,7 @@ public class YUI_util_Loader {
 
         this.base = (String) yui_current.get(YUI_BASE);
         logger.debug("base is " + this.base);
-        init();
+       // init();
     }
 
     private boolean validateAndCache(Cache c) {
