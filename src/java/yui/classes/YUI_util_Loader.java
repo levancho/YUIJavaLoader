@@ -142,7 +142,6 @@ public class YUI_util_Loader {
      * @default null
      */
     private String yuiVersion = "";
-    private PageContext _context;
     private String cacheKey;
     private Map userSuppliedModules;
     private boolean _noYUI;
@@ -153,25 +152,24 @@ public class YUI_util_Loader {
 
      YUI_util_Loader(){}
 
-    public YUI_util_Loader(String version, PageContext context) {
-        this(version, context, "");
+    public YUI_util_Loader(String version) {
+        this(version, "");
     }
 
-    public YUI_util_Loader(String version, PageContext context, String cacheKey) {
-        this(version, context, cacheKey, null);
+    public YUI_util_Loader(String version, String cacheKey) {
+        this(version, cacheKey, null);
     }
 
-    public YUI_util_Loader(String version, PageContext context, String cacheKey, Map modules) {
-        this(version, context, cacheKey, modules, false);
+    public YUI_util_Loader(String version, String cacheKey, Map modules) {
+        this(version,  cacheKey, modules, false);
     }
 
-    public YUI_util_Loader(String version, PageContext context, String cacheKey, Map modules, boolean noYUI) {
+    public YUI_util_Loader(String version,  String cacheKey, Map modules, boolean noYUI) {
 
         if (version == null || version.trim().equals("")) {
             throw new RuntimeException("Error: The first parameter of YAHOO_util_Loader must specify which version of YUI to use!");
         }
         this.yuiVersion = version;
-        this._context = context;
         this.cacheKey = cacheKey;
         this.userSuppliedModules = modules;
 

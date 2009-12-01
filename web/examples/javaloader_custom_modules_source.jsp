@@ -35,7 +35,7 @@
 
 //Get a new YAHOO_util_Loader instance which includes just our custom metadata (No YUI metadata)
 //Note: rand is used here to help cache bust the example
-YUI_util_Loader  loader = new YUI_util_Loader("2.8.0",pageContext, "my_custom_config_2", customModules, true);
+YUI_util_Loader  loader = new YUI_util_Loader("2.8.0", "my_custom_config_2", customModules, true);
 
 loader.load("JSONModule", "customJS", "customCSS");
  %>

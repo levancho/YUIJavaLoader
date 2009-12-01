@@ -8,7 +8,7 @@
 <%@page import="yui.classes.*" %>
 <jsp:include page="inc/config.jsp" />
     <%
-      YUI_util_Loader  loader= new YUI_util_Loader("2.8.0",pageContext);
+      YUI_util_Loader  loader= new YUI_util_Loader("2.8.0");
     //Specify YUI components to load
     loader.combine = true;
     //.comboBase="http://localhost:8084/YUIJavaLoader/combo?";

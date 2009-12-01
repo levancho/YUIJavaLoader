@@ -8,10 +8,10 @@
 <%@page import="yui.classes.*" %>
 <jsp:include page="inc/config.jsp" />
     <%
-      YUI_util_Loader  loader= new YUI_util_Loader("2.8.0",pageContext);
+      YUI_util_Loader  loader= new YUI_util_Loader("2.8.0");
     //Specify YUI components to load
     loader.combine = true;
-    loader.comboBase="http://localhost:8084/YUIJavaLoader/combo?";
+    loader.comboBase="http://amoserver.com:9090/YUIJavaLoader/combo?";
     loader.load("editor", "calendar", "container", "animation", "fonts");
     //Output the tags (this call would most likely be placed in the document head)
  %>

@@ -8,9 +8,8 @@
 <%@page import="yui.classes.*" %>
 <jsp:include page="inc/config.jsp" />
     <%
-      YUI_util_Loader  loader= new YUI_util_Loader("2.8.0",pageContext);
+      YUI_util_Loader  loader= new YUI_util_Loader("2.8.0");
     //Specify YUI components to load
-loader.loadOptional= true;
 loader.allowRollups= true;
 loader.filter = YUI_util_Loader.YUI_RAW;
     loader.load("yahoo", "dom","calendar", "event", "tabview", "grids", "fonts", "reset","logger");
@@ -30,10 +29,12 @@ loader.filter = YUI_util_Loader.YUI_RAW;
     <div style="margin:20px;padding:20px; background-color:#eeeeee">
  source outlook:
     <pre>
-         YUI_util_Loader  loader= new YUI_util_Loader("2.7.0",pageContext);
+       YUI_util_Loader  loader= new YUI_util_Loader("2.8.0");
     //Specify YUI components to load
-
-    loader.load("yahoo", "dom","calendar", "event", "tabview", "grids", "fonts", "reset");
+    loader.allowRollups= true;
+    loader.filter = YUI_util_Loader.YUI_RAW;
+    loader.load("yahoo", "dom","calendar", "event", "tabview", "grids", "fonts", "reset","logger");
+    //Output the tags (this call would most likely be placed in the document head)
 
     </pre>
      insde of the head we insert css  scriplet  :

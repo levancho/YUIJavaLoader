@@ -38,7 +38,7 @@ public class ComboServlet  extends  HttpServlet{
                     HttpServletResponse response)
       throws ServletException, IOException {
                         // TODO only get supported
-            doGet(request,response);
+            response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Post  is not Allowed");
   }
 
 
