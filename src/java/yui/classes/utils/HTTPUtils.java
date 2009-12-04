@@ -49,7 +49,7 @@ public class HTTPUtils {
         CONTENT_TYPE("Content-Type", ""),
         CONTENT_LENGTH("Content-Length", ""),
         RES_E_TAG("ETag", ""),
-        RES_EXPIRES("	Expires", ""),
+        RES_EXPIRES("Expires", ""),
         RES_LAST_MODIFIED("Last-Modified", "");
 
         Headers(String _name, String _defaultValue) {
@@ -76,18 +76,15 @@ public class HTTPUtils {
     }
 
     public static String getNormalizedServletPath(HttpServletRequest request) {
-
         String servletPath = request.getServletPath();
         String pathInfo = request.getPathInfo();
-         String requestURI = request.getRequestURI();
+        String requestURI = request.getRequestURI();
 
-        if (requestURI == null && pathInfo==null && requestURI==null) {
-                    throw new RuntimeException("Invalid Requst,  request.getServletPath() , request.getPathInfo()  "
-                            + "and  request.getRequestURI() are all null ");
+        if (requestURI == null && pathInfo == null && requestURI == null) {
+            throw new RuntimeException("Invalid Requst,  request.getServletPath() , request.getPathInfo()  "
+                    + "and  request.getRequestURI() are all null ");
         }
-         
         if (servletPath == null) {
-
             if (pathInfo == null) {
                 servletPath = requestURI;
             } else {
@@ -109,7 +106,10 @@ public class HTTPUtils {
     public static boolean containsHeaders(HttpServletRequest req, Headers... headernames) {
         for (Headers header : headernames) {
             if (req.getHeader(header + "") == null) {
+                logger.trace("[containsHeaders] could not locate Header  " + header);
                 return false;
+            } else {
+                logger.trace("[containsHeaders] found Header  " + header);
             }
         }
         return true;
@@ -134,8 +134,8 @@ public class HTTPUtils {
             int datecompare = getNormalizedDate(req.getDateHeader("If-Modified-Since")).
                     compareTo(getNormalizedDate(modifiedTime));
 
-            boolean datesmatch =(datecompare==0);
-             boolean tagsmatch = eTag.equalsIgnoreCase(byteTag);
+            boolean datesmatch = (datecompare == 0);
+            boolean tagsmatch = eTag.equalsIgnoreCase(byteTag);
 
             return !datesmatch || !tagsmatch;
 
