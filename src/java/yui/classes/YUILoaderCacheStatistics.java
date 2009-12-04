@@ -78,6 +78,7 @@ public class YUILoaderCacheStatistics {
         for (String e : k) {
              sb.append("<hr>");
             Element el = cache.get(e);
+           
 
             if(el!=null){
                 sb.append("Stats For Element: <span style=\"color:green;font-weight:bold\"> [" + e + "]</span> ");
