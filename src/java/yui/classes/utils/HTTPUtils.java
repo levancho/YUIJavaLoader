@@ -31,9 +31,9 @@ public class HTTPUtils {
         return eTagDefaultPrefix;
     }
 
-    public static String getEtag(long HashCode) {
+    public static String getEtag(long Postffix) {
         // TODO
-        return eTagDefaultPrefix + String.valueOf(HashCode);
+        return eTagDefaultPrefix + String.valueOf(Postffix);
     }
 
     public enum Headers {
@@ -128,14 +128,18 @@ public class HTTPUtils {
 
         logger.trace("[isModified] Generating Date for   fileSize: " + fileSize + " modifiedTime:" + modifiedTime);
         if (containsHeaders(req, Headers.REQ_IF_MODIFIED_SINCE, Headers.REQ_IF_NONE_MATCH)) {
+
             String byteTag = getEtag(fileSize);
             String eTag = req.getHeader("If-None-Match");
-            int datematch = getNormalizedDate(req.getDateHeader("If-Modified-Since")).
+            int datecompare = getNormalizedDate(req.getDateHeader("If-Modified-Since")).
                     compareTo(getNormalizedDate(modifiedTime));
 
-            return datematch != 0 || !eTag.equalsIgnoreCase(byteTag);
-        } else {
+            boolean datesmatch =(datecompare==0);
+             boolean tagsmatch = eTag.equalsIgnoreCase(byteTag);
 
+            return !datesmatch || !tagsmatch;
+
+        } else {
             return true;
         }
     }
