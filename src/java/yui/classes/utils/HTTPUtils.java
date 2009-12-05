@@ -27,6 +27,8 @@ public class HTTPUtils {
     public final static String CACHE_STORE = "NO-STORE";
     public static String eTagDefaultPrefix = "_YUIJL_";
 
+
+
     public static String getDefaultEtagPrefix() {
         return eTagDefaultPrefix;
     }
@@ -34,6 +36,22 @@ public class HTTPUtils {
     public static String getEtag(long Postffix) {
         // TODO
         return eTagDefaultPrefix + String.valueOf(Postffix);
+    }
+
+public enum CONTENT_TYPE{
+
+        JAVASCRIPT("application/x-javascript"),
+        CSS("text/css");
+
+        CONTENT_TYPE(String _name) {
+            this.name = _name;
+        }
+        private String name;
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 
     public enum Headers {

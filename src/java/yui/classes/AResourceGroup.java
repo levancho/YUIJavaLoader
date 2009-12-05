@@ -6,12 +6,14 @@ package yui.classes;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import yui.classes.utils.HTTPUtils;
 
 /**
  *
@@ -33,6 +35,46 @@ public class AResourceGroup {
         parseUrl(queryString);
     }
 
+
+    AResourceGroup(HttpServletRequest request) {
+        parseRequest(request);
+    }
+
+    private void extractmetaInfo (String item) {
+
+                this.contentType =(item.indexOf(".js") != -1) ? HTTPUtils.CONTENT_TYPE.JAVASCRIPT+"": HTTPUtils.CONTENT_TYPE.CSS+"";
+                this.metaInfo = item.split("/");
+                logger.info("metainfo:  " + Arrays.toString(this.getMetaInfo()));
+                this.version = this.getMetaInfo()[0];
+    }
+
+     private void parseRequest(HttpServletRequest request) {
+        try {
+            queryString = URLDecoder.decode(request.getQueryString(), "UTF-8");
+        } catch (UnsupportedEncodingException ex) {
+               logger.error("error occured getting query String" + ex );
+        }
+
+        _group = new ArrayList(request.getParameterMap().size());
+        for (Enumeration<String> e = request.getParameterNames(); e.hasMoreElements();) {
+            String i =  e.nextElement();
+            logger.info("Adding Item: " +  i);
+            _group.add( i);
+        }
+
+        extractmetaInfo(_group.get(0));
+
+//        Map m = request.getParameterMap();
+//
+//         for (Iterator it = m.entrySet().iterator(); it.hasNext();) {
+//                 Map.Entry pairs = (Map.Entry) it.next();
+//                 String name = (String) pairs.getKey();
+//                 String[] value = (String[]) pairs.getValue();
+//                     logger.info("name: " + name+" value "+Arrays.toString(value));
+//         }
+
+    }
+
     private void parseUrl(String _q) {
         String[] yuiFiles = null;
 
@@ -50,11 +92,8 @@ public class AResourceGroup {
                     return;
                 }
 
-                this.contentType = (yuiFiles[0].indexOf(".js") != -1) ? "application/x-javascript" : "text/css";
-                this.metaInfo = yuiFiles[0].split("/");
-                this._group = Arrays.asList(yuiFiles);
-                logger.info("metainfo:  " + Arrays.toString(this.getMetaInfo()));
-                this.version = this.getMetaInfo()[0];
+                extractmetaInfo(yuiFiles[0]);
+                _group= Arrays.asList(yuiFiles);
             }
 
         } catch (UnsupportedEncodingException ex) {
@@ -116,6 +155,4 @@ public class AResourceGroup {
     public String getQueryString() {
         return queryString;
     }
-
-    
 }

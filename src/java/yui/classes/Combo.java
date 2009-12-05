@@ -26,6 +26,7 @@ import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import yui.classes.utils.HTTPUtils;
 
 /**
  *
@@ -73,33 +74,17 @@ public class Combo {
         this.response = _response;
         serverURI = server(true);
         cacheManager = CacheManager.create();
-        resourceGroup = new AResourceGroup(request.getQueryString());
+        //resourceGroup = new AResourceGroup(request.getQueryString());
+        resourceGroup= new AResourceGroup(request);
         init();
-
-
     }
+
+
     public String serverURI;
-
-    private void parseRequest() {
-
-        String g = "";
-        for (Enumeration e = request.getParameterNames(); e.hasMoreElements();) {
-            logger.info("Item: " + e.nextElement());
-        }
-
-    }
-
-    private void parseRequestOld() {
-    }
-
-
     private void init() {
 
         logger.info("starting init");
-
         if (!resourceGroup.getQueryString().equals("")) {
-
-            //
             if (!cacheManager.cacheExists(cacheKey)) {
                 cacheManager.addCache(cacheKey);
             }
@@ -153,11 +138,11 @@ public class Combo {
                         throw new RuntimeException("<!-- Unable to determine module name! -->");
                     }
 
+                    logger.info(HTTPUtils.Headers.CACHE_CONTROL+"");
+
                     logger.info("loading following Components :  " + yuiComponent);
                     loader.loadSingle(yuiComponent);
-                    logger.info("contentType is :  " + resourceGroup.getContentType());
-
-                    if (resourceGroup.getContentType().equals("application/x-javascript")) {
+                    if (resourceGroup.getContentType().equals(HTTPUtils.CONTENT_TYPE.JAVASCRIPT+"")) {
                         raw += loader.script_raw();
                         logger.trace("fetching raw from loader :  " + raw);
                         // TODO display
@@ -172,7 +157,7 @@ public class Combo {
                         if (cssResourceListCSS != null) {
                             for (String key : (Set<String>) cssResourceListCSS.keySet()) {
                                 // TODO finish
-                                logger.info("key  is :  " + key);
+                                logger.debug("key  is :  " + key);
                                 crtResourceBase = key.substring(0, (key.lastIndexOf("/") + 1));
                                 logger.info("crtResourceBase  is :  " + crtResourceBase);
 
@@ -188,6 +173,7 @@ public class Combo {
                         logger.trace("rawCSS after: " + raw);
                     }
                 }
+                 logger.info("[putting in Cache]  key " + serverURI + resourceGroup.getContentType());
                 c.put(new Element(serverURI + resourceGroup.getContentType(), raw));
 //                        YUIcompressorAPI api =  new YUIcompressorAPI();
 //                        YUIcompressorAPI.Config  conf= api .new Config(null);
