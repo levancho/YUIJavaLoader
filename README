@@ -12,8 +12,8 @@ YUI PHP Loader Issue tracker:
 
 
 The YUI Java Loader Utility is a server-side utility that allows you to
-load specific YUI components and their dependencies into your page via YUI.
-YUI YUI Loader can operate as a holistic solution by loading all of your
+load specific YUI components and their dependencies into your page.
+YUI Java Loader can operate as a holistic solution by loading all of your
 necessary YUI components, or it can be used to add one or more components 
 to a page on which some YUI content already exists.
 
