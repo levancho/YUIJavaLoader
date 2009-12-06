@@ -22,7 +22,6 @@ such as: Apache Tomcat,it can also run in popular J2EE Enterprize Containers
 such as: GlasshFish.
 
 The code for YUIJavaloader is provided under a BSD license:
-    http://developer.yahoo.net/yui/license.html
 
 YUIJavaloader Project home page:
     http://wiki.github.com/levancho/YUIJavaLoader
