@@ -1,16 +1,35 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ *  Copyright (c) 2009, Amostudio,inc
+ *  All rights reserved.
+ *  Code licensed under the BSD License:
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *        documentation and/or other materials provided with the distribution.
+ *    * Neither the name of the Amostudio,inc  nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ *   THIS SOFTWARE IS PROVIDED BY Amostudio,inc ''AS IS'' AND ANY
+ *   EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *   DISCLAIMED. IN NO EVENT SHALL Amostudio,inc  BE LIABLE FOR ANY
+ *   DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ *  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package yui.classes;
 
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,7 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import javax.servlet.jsp.PageContext;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.Element;
@@ -32,6 +50,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import yui.classes.utils.HTTPUtils;
 
 /**
  *
@@ -150,7 +169,8 @@ public class YUI_util_Loader {
     CacheManager cacheManager;
     private boolean customModulesInUse;
 
-     YUI_util_Loader(){}
+    YUI_util_Loader() {
+    }
 
     public YUI_util_Loader(String version) {
         this(version, "");
@@ -161,10 +181,10 @@ public class YUI_util_Loader {
     }
 
     public YUI_util_Loader(String version, String cacheKey, Map modules) {
-        this(version,  cacheKey, modules, false);
+        this(version, cacheKey, modules, false);
     }
 
-    public YUI_util_Loader(String version,  String cacheKey, Map modules, boolean noYUI) {
+    public YUI_util_Loader(String version, String cacheKey, Map modules, boolean noYUI) {
 
         if (version == null || version.trim().equals("")) {
             throw new RuntimeException("Error: The first parameter of YAHOO_util_Loader must specify which version of YUI to use!");
@@ -210,7 +230,7 @@ public class YUI_util_Loader {
 
         this.base = (String) yui_current.get(YUI_BASE);
         logger.debug("base is " + this.base);
-       // init();
+        // init();
     }
 
     private boolean validateAndCache(Cache c) {
@@ -248,7 +268,7 @@ public class YUI_util_Loader {
         this.fullCacheKey = this.base + this.cacheKey;
         Cache c = cacheManager.getCache(this.fullCacheKey);
         logger.info("this.fullCacheKey" + this.fullCacheKey);
-        if (cacheKey!=null && validateAndCache(c)) {
+        if (cacheKey != null && validateAndCache(c)) {
             logger.info("we have found Cache " + c + " for Key " + this.fullCacheKey);
 
 //        try {
@@ -342,7 +362,7 @@ public class YUI_util_Loader {
     }
 
     private Cache updateCache() {
-        if(cacheKey==null){
+        if (cacheKey == null) {
             logger.info("Cache is Turned off");
             return null;
         }
@@ -1346,16 +1366,16 @@ public class YUI_util_Loader {
                     Map subsubsub = new HashMap();
                     subsubsub.put(_url, prov);
                     Object m = json.get(subdeps);
-                    if(m!=null){
-                        ((Map)m).putAll(subsubsub);
-                    }else {
+                    if (m != null) {
+                        ((Map) m).putAll(subsubsub);
+                    } else {
                         json.put(subdeps, subsubsub);
                     }
 
                 } else if (outputType.equals(YUI_FULLJSON)) {
                     String _name = (String) dep.get(YUI_NAME);
-                    logger.info("name for Dep "+dep+" is "+_name);
-                    
+                    logger.info("name for Dep " + dep + " is " + _name);
+
                     Map item = new HashMap();
                     item.put(YUI_TYPE, dep.get(YUI_TYPE));
                     item.put(YUI_URL, dep.get(YUI_URL));
@@ -1363,8 +1383,8 @@ public class YUI_util_Loader {
                     item.put(YUI_REQUIRES, dep.get(YUI_TYPE));
                     item.put(YUI_OPTIONAL, dep.get(YUI_TYPE));
                     json.put(_name, item);
-                    logger.info("name for Dep "+json.size());
-                    logger.info("name for Dep "+json);
+                    logger.info("name for Dep " + json.size());
+                    logger.info("name for Dep " + json);
                 } else {
                     if (this.combine == true && !this.customModulesInUse) {
                         this.addToCombo(name, (String) dep.get(YUI_TYPE));
@@ -1441,6 +1461,8 @@ public class YUI_util_Loader {
         }
     }
 
+      
+
     /**
      * Retrieve the contents of a remote resource
      * @method getRemoteContent
@@ -1450,68 +1472,17 @@ public class YUI_util_Loader {
     public String getRemoteContent(String urlString) {
         logger.debug("[getRemoteContent] getting Remote Content for url" + urlString);
         Cache c = updateCache();
-        Element el=null;
-        if(c!=null){
+        Element el = null;
+        if (c != null) {
             el = c.get(urlString);
         }
         String content = null;
-        HttpURLConnection connection = null;
-        DataInputStream in = null;
-        BufferedReader d = null;
 
         logger.debug("[getRemoteContent] Lets check if we have Content for " + urlString + " cached");
         if (el == null) {
-            try {
-                logger.debug("[getRemoteContent]  Nope, No cache, so lets crank up HTTP Connection");
-                URL url = new URL(urlString);
-                connection = (HttpURLConnection) url.openConnection();
-                //connection.setRequestMethod("POST");
-                connection.setInstanceFollowRedirects(true);
-                connection.setDoOutput(true);
-                connection.setDoInput(true);
-                connection.setUseCaches(false);
-                connection.setReadTimeout(10000);
-                connection.connect();
+                content = HTTPUtils.getRemoteContent(urlString);
+              // Experimenting: content =HTTPUtils.getRemoteContentNIO(urlString);
 
-                in = new DataInputStream(connection.getInputStream());
-                d = new BufferedReader(new InputStreamReader(in));
-                StringBuffer sb = new StringBuffer();
-                while (d.ready()) {
-                    sb.append(d.readLine());
-
-                }
-                content = sb.toString();
-                logger.debug("HTML we got  is" + content);
-                c.put(new Element(urlString, content));
-            } catch (IOException ex) {
-                logger.error("IO Exception " + ex.getMessage());
-            } catch (Exception e) {
-                logger.error(e.getMessage());
-            } finally {
-                if (connection != null) {
-                    connection.disconnect();
-                    connection = null;
-                }
-
-                if (in != null) {
-                    try {
-                        in.close();
-                        in = null;
-                    } catch (IOException ex) {
-                        // do nothing
-                    }
-                }
-
-                if (d != null) {
-                    try {
-                        d.close();
-                        d = null;
-                    } catch (IOException ex) {
-                        // do nothing
-                    }
-                }
-
-            }
         } else {
             content = (String) el.getValue();
         }
@@ -1713,7 +1684,6 @@ public class YUI_util_Loader {
 
         return sb.toString();
     }
-
 
     public InputStream loadResource(String name) {
         logger.debug("Trying to Load Resource : " + name);

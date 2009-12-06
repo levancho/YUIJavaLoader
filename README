@@ -1,0 +1,54 @@
+yuiJavaloader README
+The YUI Java Loader is deriviative work of YUI PHP Loader Located @
+
+YUI PHP Loader Project home page:
+    http://developer.yahoo.com/yui/phploader
+
+YUI PHP Loader Source code:
+    http://github.com/yui/phploader
+
+YUI PHP Loader Issue tracker:
+    http://yuilibrary.com/projects/phploader
+
+
+The YUI Java Loader Utility is a server-side utility that allows you to
+load specific YUI components and their dependencies into your page via YUI.
+YUI YUI Loader can operate as a holistic solution by loading all of your
+necessary YUI components, or it can be used to add one or more components 
+to a page on which some YUI content already exists.
+
+YUIJavaloader requires a webserver Container with support for JSP and Servlet .
+such as: Apache Tomcat,it can also run in popular J2EE Enterprize Containers
+such as: GlasshFish.
+
+The code for YUIJavaloader is provided under a BSD license:
+    http://developer.yahoo.net/yui/license.html
+
+YUIJavaloader Project home page:
+    http://wiki.github.com/levancho/YUIJavaLoader
+    
+YUIJavaloader Source code:
+    http://github.com/levancho/YUIJavaLoader
+
+YUIJavaloader Issue tracker:
+    http://github.com/levancho/YUIJavaLoader/issues
+    
+Files:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+README
+    This file
+
+CHANGES
+    The change log
+
+INSTALL
+    Installation instructions
+
+THIRDPARY
+    List of third party libraries used, with the link to their source
+
+license.txt
+    Open source license details.
+
+

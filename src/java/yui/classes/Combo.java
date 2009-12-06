@@ -1,17 +1,36 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ *  Copyright (c) 2009, Amostudio,inc
+ *  All rights reserved.
+ *  Code licensed under the BSD License:
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *        documentation and/or other materials provided with the distribution.
+ *    * Neither the name of the Amostudio,inc  nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ *   THIS SOFTWARE IS PROVIDED BY Amostudio,inc ''AS IS'' AND ANY
+ *   EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ *   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *   DISCLAIMED. IN NO EVENT SHALL Amostudio,inc  BE LIABLE FOR ANY
+ *   DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ *  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package yui.classes;
-
-import java.io.UnsupportedEncodingException;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 
 import java.util.Calendar;
-import java.util.Enumeration;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.Map;
@@ -20,7 +39,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.jsp.PageContext;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
@@ -35,30 +53,13 @@ import yui.classes.utils.HTTPUtils;
 public class Combo {
 
     Logger logger = LoggerFactory.getLogger(Combo.class);
-
     private AResourceGroup resourceGroup;
-    HttpServletRequest request;
-    HttpServletResponse response;
-
+    private HttpServletRequest request;
+    private HttpServletResponse response;
     private String cacheKey = "yuiconfigLFU";
-    CacheManager cacheManager;
-
-    public String server(boolean includeRequestURI) {
-
-        logger.info("calculating server url");
-        String path = request.getContextPath();
-        logger.info("calculating server url path" + path);
-        String basePath = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-        logger.info("calculating server url basePath" + basePath);
-        if (includeRequestURI) {
-            basePath += path + "/";
-        }
-        logger.info("calculating server url all" + basePath);
-        // we could maybe try request.getRemoteHost()
-
-        return basePath;
-    }
-    String crtResourceBase;
+    private CacheManager cacheManager;
+    public   String serverURI;
+    private String crtResourceBase;
 
     public void alphaImageLoaderPathCorrection(String... matches) {
         // TODO
@@ -72,15 +73,13 @@ public class Combo {
 
         this.request = _request;
         this.response = _response;
-        serverURI = server(true);
+        serverURI = HTTPUtils.getServerURL(_request);
         cacheManager = CacheManager.create();
         //resourceGroup = new AResourceGroup(request.getQueryString());
-        resourceGroup= new AResourceGroup(request);
+        resourceGroup = new AResourceGroup(request);
         init();
     }
 
-
-    public String serverURI;
     private void init() {
 
         logger.info("starting init");
@@ -90,8 +89,9 @@ public class Combo {
             }
 
             HttpServletResponse res = (HttpServletResponse) response;
-            setCacheExpireDate(res, 315360000);
-            res.setHeader("Content-Type", resourceGroup.getContentType());
+
+            HTTPUtils.setCacheExpireDate(res, 315360000);
+            res.setHeader(HTTPUtils.Headers.CONTENT_TYPE+"", resourceGroup.getContentType());
 
             Cache c = cacheManager.getCache(cacheKey);
             if (c.isKeyInCache(serverURI + resourceGroup.getContentType())) {
@@ -138,11 +138,11 @@ public class Combo {
                         throw new RuntimeException("<!-- Unable to determine module name! -->");
                     }
 
-                    logger.info(HTTPUtils.Headers.CACHE_CONTROL+"");
+                    logger.info(HTTPUtils.Headers.CACHE_CONTROL + "");
 
                     logger.info("loading following Components :  " + yuiComponent);
                     loader.loadSingle(yuiComponent);
-                    if (resourceGroup.getContentType().equals(HTTPUtils.CONTENT_TYPE.JAVASCRIPT+"")) {
+                    if (resourceGroup.getContentType().equals(HTTPUtils.CONTENT_TYPE.JAVASCRIPT + "")) {
                         raw += loader.script_raw();
                         logger.trace("fetching raw from loader :  " + raw);
                         // TODO display
@@ -165,7 +165,6 @@ public class Combo {
                                 // TODO Image path correction
 
                                 raw += crtResourceContent;
-
                             }
                         }
                         logger.trace("rawCSS before: " + raw);
@@ -173,7 +172,7 @@ public class Combo {
                         logger.trace("rawCSS after: " + raw);
                     }
                 }
-                 logger.info("[putting in Cache]  key " + serverURI + resourceGroup.getContentType());
+                logger.info("[putting in Cache]  key " + serverURI + resourceGroup.getContentType());
                 c.put(new Element(serverURI + resourceGroup.getContentType(), raw));
 //                        YUIcompressorAPI api =  new YUIcompressorAPI();
 //                        YUIcompressorAPI.Config  conf= api .new Config(null);
@@ -185,7 +184,7 @@ public class Combo {
 
     public String getRaw() {
         logger.info("[getRaw] checking cache");
-        if (serverURI == null || resourceGroup.getContentType() == null || !cacheManager.cacheExists(cacheKey)) {
+        if (serverURI == null || resourceGroup==null || resourceGroup.getContentType() == null || !cacheManager.cacheExists(cacheKey)) {
             logger.info("[getRaw] we have to ReInit, something was wrong");
             init();
         }
@@ -200,24 +199,4 @@ public class Combo {
             throw new RuntimeException("[getRaw] cache was not found, something is wrong" + serverURI + resourceGroup.getContentType());
         }
     }
-
-    private void init2() {
-    }
-
-    public static void setCacheExpireDate(HttpServletResponse response,
-            int seconds) {
-        if (response != null) {
-            Calendar cal = new GregorianCalendar();
-            cal.roll(Calendar.SECOND, seconds);
-            response.setHeader("Cache-Control", "PRIVATE, max-age=" + seconds + ", must-revalidate");
-            response.setHeader("Expires", htmlExpiresDateFormat().format(cal.getTime()));
-        }
-    }
-
-    public static DateFormat htmlExpiresDateFormat() {
-        DateFormat httpDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
-        httpDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-        return httpDateFormat;
-    }
-    //getQueryString() 
 }

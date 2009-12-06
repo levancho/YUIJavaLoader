@@ -1,0 +1,21 @@
+Basic YUI YUI Loader Setup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Verify that the environment you intend to install YUI YUI Loader on
+    has a working JSP/Servlet server container, (e.g.) Apache tomcat, .
+
+2. TODO
+    
+3. TODO
+
+Local Combo Handler Setup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This feature will allow YUI YUI Loader to combine files without relying
+on a remote combo-service.
+
+1. The main endpoint for combo requests in this case is combo context.
+    
+2.TODO
+    
+3. 
