@@ -14,7 +14,7 @@
 	<title>YUI Java Loader Utility Basic Example: Loading YUI Calendar with the YUI Java Loader Utility</title>
 	
         <%
-      YUI_util_Loader  loader= new YUI_util_Loader("2.7.0");
+      YUILoader  loader= new YUILoader("2.7.0");
     //Specify YUI components to load
 
       //Turn off rollups

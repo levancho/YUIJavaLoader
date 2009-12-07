@@ -102,7 +102,7 @@ public class Combo {
                 logger.debug(c.get(serverURI + resourceGroup.getContentType()).toString());
             } else {
                 logger.debug("we dont have cache for  " + serverURI);
-                YUI_util_Loader loader = new YUI_util_Loader(resourceGroup.getVersion());
+                YUILoader loader = new YUILoader(resourceGroup.getVersion());
                 // todo do we need this? dont think so
 //                    $base   = PATH_TO_LIB . $yuiVersion . "/build/";
 //                    $loader->base = $base;
@@ -111,10 +111,10 @@ public class Combo {
                 //Detect and set a filter as needed (defaults to minified version)
                 if (resourceGroup.isDebug()) {
                     logger.debug("Found debug files ");
-                    loader.filter = YUI_util_Loader.YUI_DEBUG;
+                    loader.filter = YUILoader.YUI_DEBUG;
                 } else if (!resourceGroup.isDebug() && !resourceGroup.isMin()) {
                     logger.debug("assuming raw files");
-                    loader.filter = YUI_util_Loader.YUI_RAW;
+                    loader.filter = YUILoader.YUI_RAW;
                 }
 
                 //Verify this version of the library exists locally

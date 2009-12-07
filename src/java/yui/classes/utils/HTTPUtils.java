@@ -47,6 +47,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.Random;
 import java.util.TimeZone;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -426,5 +427,18 @@ public class HTTPUtils {
             }
         }
         return ret;
+    }
+
+
+    public static int generateRandomKeySuffix() {
+        //note a single Random object is reused here
+        Random randomGenerator = new Random();
+        int randomInt = 100;
+        for (int idx = 1; idx <= 10; ++idx) {
+            randomInt += randomGenerator.nextInt(randomInt);
+            System.out.println("Generated : " + randomInt);
+        }
+        System.out.println("Generated SUM : " + randomInt);
+        return randomInt;
     }
 }

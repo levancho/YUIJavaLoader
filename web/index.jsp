@@ -14,7 +14,7 @@
 
 
 
-      YUI_util_Loader  loader2= new YUI_util_Loader("2.7.0",pageContext);
+      YUILoader  loader2= new YUILoader("2.7.0");
 
 //Turn off rollups
     loader2.allowRollups = true;

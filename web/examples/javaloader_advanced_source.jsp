@@ -8,10 +8,10 @@
 <%@page import="yui.classes.*" %>
 <jsp:include page="inc/config.jsp" />
     <%
-      YUI_util_Loader  loader= new YUI_util_Loader("2.8.0");
+      YUILoader  loader= new YUILoader("2.8.0");
     //Specify YUI components to load
 loader.allowRollups= true;
-loader.filter = YUI_util_Loader.YUI_RAW;
+loader.filter = YUILoader.YUI_RAW;
     loader.load("yahoo", "dom","calendar", "event", "tabview", "grids", "fonts", "reset","logger");
     //Output the tags (this call would most likely be placed in the document head)
  %>
@@ -29,10 +29,10 @@ loader.filter = YUI_util_Loader.YUI_RAW;
     <div style="margin:20px;padding:20px; background-color:#eeeeee">
  source outlook:
     <pre>
-       YUI_util_Loader  loader= new YUI_util_Loader("2.8.0");
+       YUILoader  loader= new YUILoader("2.8.0");
     //Specify YUI components to load
     loader.allowRollups= true;
-    loader.filter = YUI_util_Loader.YUI_RAW;
+    loader.filter = YUILoader.YUI_RAW;
     loader.load("yahoo", "dom","calendar", "event", "tabview", "grids", "fonts", "reset","logger");
     //Output the tags (this call would most likely be placed in the document head)
 
@@ -47,7 +47,7 @@ loader.filter = YUI_util_Loader.YUI_RAW;
 
 <h1>YUI Java Loader Utility Advanced Example: Loading the YUI Calendar Control with the YUI Java Loader Utility</h1>
 
-<p>In this example, we bring a YUI component onto the page using the YUI Java Loader Utility This example implements YUI Java Loader via a <code>YUI_util_Loader</code> instance.
+<p>In this example, we bring a YUI component onto the page using the YUI Java Loader Utility This example implements YUI Java Loader via a <code>YUILoader</code> instance.
 <div id="calendar_container"></div>
 
   <%=loader.script()%>

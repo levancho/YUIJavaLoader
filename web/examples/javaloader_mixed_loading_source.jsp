@@ -8,7 +8,7 @@
 <%@page import="yui.classes.*" %>
 <jsp:include page="inc/config.jsp" />
    <%
-      YUI_util_Loader  loader= new YUI_util_Loader("2.7.0");
+      YUILoader  loader= new YUILoader("2.7.0");
     //Specify YUI components to load
 
     loader.load("calendar");
@@ -25,7 +25,7 @@
   <div style="margin:20px;padding:20px; background-color:#eeeeee">
  source outlook:
     <pre>
-     YUI_util_Loader  loader= new YUI_util_Loader("2.7.0");
+     YUILoader  loader= new YUILoader("2.7.0");
     loader.load("calendar");
 
     </pre>

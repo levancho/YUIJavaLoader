@@ -55,9 +55,9 @@ import yui.classes.utils.IOUtils;
  *
  * @author leo
  */
-public class YUI_util_Loader {
+public class YUILoader {
 
-    Logger logger = LoggerFactory.getLogger(YUI_util_Loader.class);
+    Logger logger = LoggerFactory.getLogger(YUILoader.class);
     public static final String YUI_AFTER = "after";
     public static final String YUI_BASE = "base";
     public static final String YUI_CSS = "css";
@@ -113,6 +113,11 @@ public class YUI_util_Loader {
     // private  List<String> loadCount;
     // keeps track of modules that were requested that are not defined
     private Map undefined = new HashMap();
+
+    public int howManyUndefined () {
+       return  undefined.size();
+    }
+
     private boolean dirty = true;
     private Map sorted = new LinkedHashMap();
     private List accountedFor = new ArrayList();
@@ -168,22 +173,22 @@ public class YUI_util_Loader {
     CacheManager cacheManager;
     private boolean customModulesInUse;
 
-    YUI_util_Loader() {
+    YUILoader() {
     }
 
-    public YUI_util_Loader(String version) {
+    public YUILoader(String version) {
         this(version, "");
     }
 
-    public YUI_util_Loader(String version, String cacheKey) {
+    public YUILoader(String version, String cacheKey) {
         this(version, cacheKey, null);
     }
 
-    public YUI_util_Loader(String version, String cacheKey, Map modules) {
+    public YUILoader(String version, String cacheKey, Map modules) {
         this(version, cacheKey, modules, false);
     }
 
-    public YUI_util_Loader(String version, String cacheKey, Map modules, boolean noYUI) {
+    public YUILoader(String version, String cacheKey, Map modules, boolean noYUI) {
 
         if (version == null || version.trim().equals("")) {
             throw new RuntimeException("Error: The first parameter of YAHOO_util_Loader must specify which version of YUI to use!");
@@ -1326,12 +1331,12 @@ public class YUI_util_Loader {
     }
 
     // TODO refactor into this
-    public String processDependenciesAsString(String outputType, String moduleType, boolean skipSort, boolean showLoaded) {
+    private String processDependenciesAsString(String outputType, String moduleType, boolean skipSort, boolean showLoaded) {
         return processDependencies(outputType, moduleType, skipSort, showLoaded);
     }
 
     // TODO refactor into this
-    public JSONObject processDependenciesAsJSON(String outputType, String moduleType, boolean skipSort, boolean showLoaded) {
+    private JSONObject processDependenciesAsJSON(String outputType, String moduleType, boolean skipSort, boolean showLoaded) {
         return null;
         // return processDependencies(outputType,  moduleType, skipSort,showLoaded);
     }
@@ -1668,17 +1673,4 @@ public class YUI_util_Loader {
         }
 
     }
-
-    public static int generateRandomKeySuffix() {
-        //note a single Random object is reused here
-        Random randomGenerator = new Random();
-        int randomInt = 100;
-        for (int idx = 1; idx <= 10; ++idx) {
-            randomInt += randomGenerator.nextInt(randomInt);
-            System.out.println("Generated : " + randomInt);
-        }
-        System.out.println("Generated SUM : " + randomInt);
-        return randomInt;
-    }
-    // TODO Possibly depricated Stuff
 }
