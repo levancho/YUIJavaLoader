@@ -76,7 +76,7 @@ public class AResourceGroup {
 
                 this.contentType =(item.indexOf(".js") != -1) ? HTTPUtils.CONTENT_TYPE.JAVASCRIPT+"": HTTPUtils.CONTENT_TYPE.CSS+"";
                 this.metaInfo = item.split("/");
-                logger.info("metainfo:  " + Arrays.toString(this.getMetaInfo()));
+                logger.debug("metainfo:  " + Arrays.toString(this.getMetaInfo()));
                 this.version = this.getMetaInfo()[0];
     }
 
@@ -90,7 +90,7 @@ public class AResourceGroup {
         _group = new ArrayList(request.getParameterMap().size());
         for (Enumeration<String> e = request.getParameterNames(); e.hasMoreElements();) {
             String i =  e.nextElement();
-            logger.info("Adding Item: " +  i);
+            logger.debug("Adding Item: " +  i);
             _group.add( i);
         }
 
@@ -102,7 +102,7 @@ public class AResourceGroup {
 //                 Map.Entry pairs = (Map.Entry) it.next();
 //                 String name = (String) pairs.getKey();
 //                 String[] value = (String[]) pairs.getValue();
-//                     logger.info("name: " + name+" value "+Arrays.toString(value));
+//                     logger.debug("name: " + name+" value "+Arrays.toString(value));
 //         }
 
     }
@@ -115,12 +115,12 @@ public class AResourceGroup {
                 queryString = URLDecoder.decode(_q, "UTF-8");
             }
 
-            logger.info("queryStringis " + getQueryString());
+            logger.debug("queryStringis " + getQueryString());
 
             if (!queryString.equals("")) {
                 yuiFiles = getQueryString().split("&");
                 if (yuiFiles == null || yuiFiles.length == 0) {
-                    logger.info("thre is nothing in query?" + getQueryString());
+                    logger.debug("thre is nothing in query?" + getQueryString());
                     return;
                 }
 

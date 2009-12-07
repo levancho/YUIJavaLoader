@@ -26,10 +26,7 @@
  */
 package yui.classes;
 
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,12 +42,14 @@ import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.Element;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import yui.classes.utils.HTTPUtils;
+import yui.classes.utils.IOUtils;
 
 /**
  *
@@ -98,6 +97,7 @@ public class YUI_util_Loader {
     public String base;
     public String filter = "";
     public String target;
+    public boolean isCacheEnabled;
     public boolean combine;
     public boolean allowRollups;
     public boolean loadOptional;
@@ -161,7 +161,6 @@ public class YUI_util_Loader {
      * @default null
      */
     private String yuiVersion = "";
-    private String cacheKey;
     private Map userSuppliedModules;
     private boolean _noYUI;
     private String _jsonConfigFilePrefix = "config";
@@ -189,38 +188,75 @@ public class YUI_util_Loader {
         if (version == null || version.trim().equals("")) {
             throw new RuntimeException("Error: The first parameter of YAHOO_util_Loader must specify which version of YUI to use!");
         }
+        
         this.yuiVersion = version;
-        this.cacheKey = cacheKey;
         this.userSuppliedModules = modules;
-
         this.customModulesInUse = (modules != null && modules.size() > 0) ? true : false;
         this._noYUI = noYUI;
         this._jsonConfigFile = "json_" + this.yuiVersion + ".txt";
+        this.isCacheEnabled = cacheKey != null?true:false;
+        this.comboDefaultVersion = this.yuiVersion;
+        this.parser = new JSONParser();
+        this.yui_current = this.loadCachedJSONConfObject(_jsonConfigFile);
+        this.base = (String) yui_current.get(YUI_BASE);
+        this.fullCacheKey = this.base + cacheKey;
+        initCache(this.fullCacheKey);
 
-        this.cacheManager = CacheManager.create();
-        this.initResources();
+        logger.debug("base is " + this.base);
         this.init();
     }
 
-    private void initResources() {
-        InputStream in = loadResource(this._jsonConfigFile);
+    private void cacheConfigObject(String key, JSONAware a) {
+    }
+
+    private JSONObject loadCachedJSONConfObject(String configFileName) {
+        // TODO cache yui_current ? to save parse time.
+        JSONObject obj = null;
+         logger.debug("[loadCachedJSONConfObject] ... ");
+        if (isCacheEnabled) {
+            logger.debug("[loadCachedJSONConfObject] Cache is Enabled ... ");
+            Cache c = initCache(_jsonConfigFile);
+            Element e = c.get(configFileName);
+            if (e != null) {
+                logger.debug("[loadCachedJSONConfObject] Found In Cache ... ");
+                obj = (JSONObject) e.getValue();
+            } else {
+                logger.debug("[loadCachedJSONConfObject] Could not Find In Cache ... ");
+                obj = _loadJSONConfObject(configFileName);
+                logger.debug("[loadCachedJSONConfObject] Updating Cache with newly Parsed JSONConfObject ... ");
+                c.put(new Element(configFileName, obj));
+            }
+        }else {
+             logger.debug("[loadCachedJSONConfObject] Cache is Disbled ... ");
+             obj = _loadJSONConfObject(configFileName);
+        }
+
+        return obj;
+    }
+
+    private JSONObject _loadJSONConfObject(String configFile) {
+        InputStream in = IOUtils.loadResource(configFile);
+        Object obj = null;
         if (in == null) {
             throw new RuntimeException("suitable YUI metadata file: [" + this._jsonConfigFile + "]  Could not be found or Loaded");
         }
         // convert inputStream to String
-        j = convertStreamToString(in);
+        String j = IOUtils.convertStreamToString(in);
         // convert json String to Java Object
-
-        parser = new JSONParser();
-
         try {
             logger.debug("Starting to Parse JSON String to Java ");
-            Object obj = parser.parse(j);
-            yui_current = (JSONObject) obj;
-            logger.debug("YUI configuration file contains: \n\r  " + yui_current);
+            obj = parser.parse(j);
+            if (obj == null) {
+                throw new RuntimeException("Parsing Resulted in null or 0 sized Object, that means configFile " + configFile
+                        + "probably is empty");
+            }
 
-            // TODO cache yui_current ? to save parse time.
-
+            if (!(obj instanceof JSONObject)) {
+                throw new RuntimeException("parse JSON file resulted in Object other than JSONObject," + obj.getClass().getName()
+                        + " but,this method strictly expects JSONObject ");
+            }
+            //yui_current = (JSONObject) obj;
+            logger.trace("configuration file contains: \n\r  " + obj);
 
         } catch (ParseException pe) {
             logger.error("position: " + pe.getPosition());
@@ -228,14 +264,13 @@ public class YUI_util_Loader {
             throw new RuntimeException("Error Occured while parsing YUI json configuration file position: " + pe.getPosition() + " \n stack trace", pe);
         }
 
-        this.base = (String) yui_current.get(YUI_BASE);
-        logger.debug("base is " + this.base);
-        // init();
+        return (JSONObject) obj;
     }
 
-    private boolean validateAndCache(Cache c) {
-        logger.info("Validating and filling Cache");
+    private boolean validateCacheMembers(Cache c) {
+        logger.info("[validateCacheMembers]  Validating ...");
         if (c == null) {
+            logger.debug("[validateCacheMembers]  Cache does not exist...");
             return false;
         }
         try {
@@ -246,49 +281,52 @@ public class YUI_util_Loader {
             this.satisfactionMap = (Map) c.get(YUI_SATISFIES).getValue();
             this.depCache = (Map) c.get(YUI_DEPCACHE).getValue();
             this.filters = (Map) c.get(YUI_FILTERS).getValue();
+            logger.debug("[validateCacheMembers] OK. Cache Members seem to be consistent ...");
         } catch (NullPointerException npe) {
-            logger.debug("inconsistency in Cache, resetting ");
+            logger.debug("[validateCacheMembers] Found inconsistency in Cache:" + c.getName() + ", thats ok, Clearing  Cache ....");
+            c.removeAll();
             return false;
         }
-
         return true;
-
     }
-    private String j;
+
     private JSONParser parser;
     int recoveryCounter = 0;
 
-    private void init() {
-        this.comboDefaultVersion = this.yuiVersion;
-
+    private Cache initCache(String key) {
         // testing  what caches we have so far.
-        String[] cacheNames = cacheManager.getCacheNames();
-        logger.debug("We have Folowing Caches available: " + Arrays.toString(cacheNames));
+        // String[] cacheNames = cacheManager.getCacheNames();
+        //logger.debug("We have Folowing Caches available: " + Arrays.toString(cacheNames));
 
-        this.fullCacheKey = this.base + this.cacheKey;
-        Cache c = cacheManager.getCache(this.fullCacheKey);
-        logger.info("this.fullCacheKey" + this.fullCacheKey);
-        if (cacheKey != null && validateAndCache(c)) {
-            logger.info("we have found Cache " + c + " for Key " + this.fullCacheKey);
+        logger.debug("[initCache] looking for cache: " + key);
+        if (cacheManager == null) {
+            logger.debug("[initCache] Creating CacheManager");
+            cacheManager = CacheManager.create();
+        }
+        if (!cacheManager.cacheExists(key)) {
+            logger.debug("[initCache] Cache not found for: " + key);
+            cacheManager.addCache(key);
+        } else {
+            logger.debug("[initCache] Cache found for: " + key);
+        }
+        Cache cache = cacheManager.getCache(key);
+        return cache;
+    }
 
-//        try {
-//                    this.modules = (Map) c.get(YUI_MODULES).getValue();
-//                    this.skin = (Map) c.get(YUI_SKIN).getValue();
-//                    this.rollupModules = (Map) c.get(YUI_ROLLUP).getValue();
-//                    this.globalModules = (List) c.get(YUI_GLOBAL).getValue();
-//                    this.satisfactionMap = (Map) c.get(YUI_SATISFIES).getValue();
-//                    this.depCache = (Map) c.get(YUI_DEPCACHE).getValue();
-//                    this.filters = (Map) c.get(YUI_FILTERS).getValue();
-//        } catch (NullPointerException npe){
-//            logger.debug("inconsistency in Cache, resetting ");
-//            if((++recoveryCounter)<200 ) {
-//                resetCache(this.fullCacheKey);
-//                init();
-//            }
-//        }
+    private void init() {
+
+        if (yui_current == null) {
+            logger.warn("There is inconsistency, yui_current is null, we need to reload and reparse JSON config file");
+            this.yui_current = loadCachedJSONConfObject(this._jsonConfigFile);
+        }
+
+        Cache c = initCache(this.fullCacheKey);
+
+        if (isCacheEnabled && validateCacheMembers(c)) {
+            logger.debug("we have found Cache " + c + " for Key " + this.fullCacheKey);
 
         } else {
-            logger.info("we have NOT  found Cache   for Key " + this.fullCacheKey);
+            logger.debug("we have NOT found Consistent Cache Members for " + this.fullCacheKey + " that means we are about to populate cache with members");
 
             if (this._noYUI) {
                 this.modules = new HashMap();
@@ -296,7 +334,7 @@ public class YUI_util_Loader {
                 this.modules = (JSONObject) this.yui_current.get("moduleInfo");
             }
 
-            logger.debug("moduleInfo config is " + this.modules);
+            logger.trace("moduleInfo config is " + this.modules);
             if (this.modules == null) {
                 throw new RuntimeException("Mising \'moduleInfo\'  property from config file");
             }
@@ -306,7 +344,7 @@ public class YUI_util_Loader {
             }
 
             this.skin = (JSONObject) this.yui_current.get(YUI_SKIN);
-            logger.debug("skin config is " + this.skin);
+            logger.trace("skin config is " + this.skin);
             if (this.skin == null) {
                 throw new RuntimeException("Mising" + YUI_SKIN + " property from config file");
             }
@@ -324,19 +362,19 @@ public class YUI_util_Loader {
                 String name = (String) pairs.getKey();
                 Object m = pairs.getValue();
                 if (m instanceof Map) {
-                    logger.debug("M is instance of Map" + m);
+                    logger.trace("M is instance of Map" + m);
                     if (((Map) m).containsKey(YUI_GLOBAL)) {
-                        logger.debug("We found " + YUI_GLOBAL + " in M ");
+                        logger.trace("We found " + YUI_GLOBAL + " in M ");
                         this.globalModules.add(name);
                     }
 
 
                     if (((Map) m).containsKey(YUI_SUPERSEDES)) {
-                        logger.debug("We found " + YUI_SUPERSEDES + " in M ");
+                        logger.trace("We found " + YUI_SUPERSEDES + " in M ");
                         if (this.rollupModules == null) {
                             this.rollupModules = new HashMap();
                         }
-                        logger.debug("add to rollupModules key=" + name + " value=" + m);
+                        logger.trace("add to rollupModules key=" + name + " value=" + m);
                         this.rollupModules.put(name, m);
 
                         JSONArray sups = (JSONArray) ((Map) m).get(YUI_SUPERSEDES);
@@ -348,9 +386,9 @@ public class YUI_util_Loader {
 
                 }
 
-                logger.debug("[key:]" + pairs.getKey() + " =  [Value:] " + pairs.getValue() + "  \n\r");
+                logger.trace("[key:]" + pairs.getKey() + " =  [Value:] " + pairs.getValue() + "  \n\r");
             }
-            logger.debug("[init:] done first pass over Modules ");
+            logger.trace("[init:] done first pass over Modules ");
 
         }
     }
@@ -362,18 +400,12 @@ public class YUI_util_Loader {
     }
 
     private Cache updateCache() {
-        if (cacheKey == null) {
+        if (fullCacheKey == null) {
             logger.info("Cache is Turned off");
             return null;
         }
-        logger.info("[updateCache]looking for cache: " + this.fullCacheKey);
-        Cache cache = cacheManager.getCache(this.fullCacheKey);
-        if (cache == null) {
-            logger.info("[updateCache] Cache not found for: " + this.fullCacheKey);
-            cacheManager.addCache(this.fullCacheKey);
-        }
+        Cache cache = initCache(this.fullCacheKey);
         if (this.fullCacheKey != null) {
-            cache = cacheManager.getCache(this.fullCacheKey);
             cache.put(new Element(YUI_MODULES, this.modules));
             cache.put(new Element(YUI_SKIN, this.skin));
             cache.put(new Element(YUI_ROLLUP, this.rollupModules));
@@ -381,9 +413,9 @@ public class YUI_util_Loader {
             cache.put(new Element(YUI_DEPCACHE, this.depCache));
             cache.put(new Element(YUI_SATISFIES, this.satisfactionMap));
             cache.put(new Element(YUI_FILTERS, this.filters));
-            logger.info("[updateCache] Cache has been successfully updated ");
+            logger.debug("[updateCache] Cache has been successfully updated ");
         } else {
-            logger.info("[updateCache] cound not initiate Cache because cacheKey is " + fullCacheKey);
+            logger.debug("[updateCache] cound not initiate Cache because cacheKey is " + fullCacheKey);
         }
         return cache;
     }
@@ -433,11 +465,11 @@ public class YUI_util_Loader {
 
     public void setLoaded(String... args) {
 
-        logger.debug(" [setLoaded]  arguments " + Arrays.toString(args));
+        logger.trace(" [setLoaded]  arguments " + Arrays.toString(args));
 
         for (String arg : args) {
             if (this.modules.containsKey(arg)) {
-                logger.debug(" [setLoaded]  module contains " + arg);
+                logger.trace(" [setLoaded]  module contains " + arg);
                 this.loaded.put(arg, arg);
                 Object mod = this.modules.get(arg);
 
@@ -460,7 +492,6 @@ public class YUI_util_Loader {
 
         }
 
-        //var_export($this->loaded);
     }
 
     private String[] parseSkin(String moduleName) {
@@ -548,12 +579,8 @@ public class YUI_util_Loader {
 
     private String formatSkin(String skin, String moduleName) {
 
-        //$prefix = $this->skin[YUI_PREFIX];
         logger.debug("[formatSkin] skin:" + skin + "moduleName:" + moduleName);
         String prefix = (String) this.skin.get(YUI_PREFIX);
-
-        //$prefix = (isset($this->skin[YUI_PREFIX])) ? $this->skin[YUI_PREFIX] : 'skin-';
-        // $s = $prefix . $skin;
 
         String s = prefix + skin;
         if (moduleName != null) {
@@ -575,7 +602,7 @@ public class YUI_util_Loader {
      */
     public boolean loadSingle(String name) {
 
-        logger.info("loading single: " + name);
+        logger.debug("loading single: " + name);
         String[] skinz = this.parseSkin(name);
 
         logger.debug("skinz are: " + Arrays.toString(skinz));
@@ -594,7 +621,7 @@ public class YUI_util_Loader {
 
         if (this.loaded.containsKey(name) || this.accountedFor.contains(name)) {
         } else {
-            logger.debug("putting into requests" + name);
+            logger.trace("putting into requests: " + name);
             this.requests.put(name, name);
             this.dirty = true;
         }
@@ -716,6 +743,9 @@ public class YUI_util_Loader {
         } catch (ParseException ex) {
             throw new RuntimeException("I am sorry but, I am unable to Parse String" + res + " to JSONObject");
         }
+         catch (Exception ex) {
+            throw new RuntimeException("something went wrong" + res + " to JSONObject");
+        }
     }
 
     /**
@@ -791,11 +821,11 @@ public class YUI_util_Loader {
     }
 
     private Map getSuperceded(String name) {
-        logger.debug(" [getSuperceded]  module name " + name);
+        logger.trace(" [getSuperceded]  module name " + name);
         String key = YUI_SUPERSEDES + name;
 
         if (this.depCache.containsKey(key)) {
-            logger.debug(" [getSuperceded]  found key in cache " + key);
+            logger.trace(" [getSuperceded]  found key in cache " + key);
             return (Map) this.depCache.get(key);
         }
 
@@ -804,23 +834,23 @@ public class YUI_util_Loader {
         if (this.modules.containsKey(name)) {
             Object m = this.modules.get(name);
 
-            logger.debug(" [getSuperceded]  Module does contains key= " + name + " value=" + m);
+            logger.trace(" [getSuperceded]  Module does contains key= " + name + " value=" + m);
             if (m instanceof Map) {
-                logger.debug(" [getSuperceded]  M is instance of Map" + m);
+                logger.trace(" [getSuperceded]  M is instance of Map" + m);
 
                 if (((Map) m).containsKey(YUI_SUPERSEDES)) {
-                    logger.debug("[getSuperceded]  We found " + YUI_SUPERSEDES + " in M ");
+                    logger.trace("[getSuperceded]  We found " + YUI_SUPERSEDES + " in M ");
 
                     JSONArray sups = (JSONArray) ((Map) m).get(YUI_SUPERSEDES);
 
                     for (Object supName : sups) {
-                        logger.debug(" [getSuperceded]  supName: " + supName);
+                        logger.trace(" [getSuperceded]  supName: " + supName);
                         _sups.put(supName, true);
                         if (this.modules.containsKey(supName)) {
-                            logger.debug(" [getSuperceded]  Module does contains key= " + supName);
+                            logger.trace(" [getSuperceded]  Module does contains key= " + supName);
                             Map supsups = this.getSuperceded((String) supName);
                             if (supsups.size() > 0) {
-                                logger.debug(" [getSuperceded]  merging Maps");
+                                logger.trace(" [getSuperceded]  merging Maps");
                                 _sups.putAll(supsups);
                             }
                         }
@@ -828,7 +858,7 @@ public class YUI_util_Loader {
                 }
             }
         } else {
-            logger.debug(" [getSuperceded]  Module does not contain " + name);
+            logger.trace(" [getSuperceded]  Module does not contain " + name);
         }
 
         this.depCache.put(key, _sups);
@@ -839,7 +869,7 @@ public class YUI_util_Loader {
 
     private Map getAllDependencies(String mname, boolean loadOptional, Map completed) {
         counter++;
-        logger.debug(" [getAllDependencies]  [" + (counter) + "] getting for mname: " + mname + " and Map " + completed);
+        logger.trace(" [getAllDependencies]  [" + (counter) + "] getting for mname: " + mname + " and Map " + completed);
 
         String key = YUI_REQUIRES + mname;
         if (loadOptional) {
@@ -848,7 +878,7 @@ public class YUI_util_Loader {
 
 
         if (this.depCache.containsKey(key)) {
-            logger.debug("Using cache " + mname);
+            logger.trace("Using depCache cache for: " + mname);
             return (Map) this.depCache.get(key);
         }
 
@@ -868,7 +898,7 @@ public class YUI_util_Loader {
             }
         }
 
-        logger.debug("M is instance of Map" + m);
+        logger.trace("M is instance of Map" + m);
         if (m.containsKey(YUI_REQUIRES)) {
             List origreqs = (List) m.get(YUI_REQUIRES);
             for (Object r : origreqs) {
@@ -879,16 +909,16 @@ public class YUI_util_Loader {
 
         //Add any submodule requirements not provided by the rollups
         if (m.containsKey(YUI_SUBMODULES)) {
-            logger.debug("M contains YUI_SUBMODULES " + YUI_SUBMODULES);
+            logger.trace("M contains YUI_SUBMODULES " + YUI_SUBMODULES);
 
             List<Map> submodules = (List<Map>) m.get(YUI_SUBMODULES);
             if (submodules != null && submodules.size() > 0) {
-                logger.debug(" submodules " + submodules);
+                logger.trace(" submodules " + submodules);
 
                 for (Map submodule : submodules) {
                     List subreqs = (List) submodule.get(YUI_REQUIRES);
                     if (subreqs != null && subreqs.size() > 0) {
-                        logger.debug(" subreqs " + subreqs);
+                        logger.trace(" subreqs " + subreqs);
                         for (Object sr : subreqs) {
                             if (!mProvides.contains(sr) && !this.accountedFor.contains(sr)) {
                                 if (!reqs.containsKey(sr)) {
@@ -908,12 +938,12 @@ public class YUI_util_Loader {
         if (m.containsKey(YUI_SUPERSEDES)) {
             List<String> supersededModules = (List<String>) m.get(YUI_SUPERSEDES);
             for (String supersededModule : supersededModules) {
-                logger.debug("supersededModule: ", supersededModule);
+                logger.trace("supersededModule: ", supersededModule);
                 Map _supModules = (Map) this.modules.get(supersededModule);
-                logger.debug("supersededModules All: ", _supModules);
+                logger.trace("supersededModules All: ", _supModules);
                 if (_supModules != null && _supModules.containsKey(YUI_REQUIRES)) {
                     List yuireqs = (List) _supModules.get(YUI_REQUIRES);
-                    logger.debug("supersededModules yuireqs ", yuireqs);
+                    logger.trace("supersededModules yuireqs ", yuireqs);
                     for (Object supersededModuleReq : yuireqs) {
                         if (!mProvides.contains(supersededModuleReq)) {
                             if (!reqs.containsKey(supersededModuleReq)) {
@@ -1086,7 +1116,7 @@ public class YUI_util_Loader {
         Map sorted = new LinkedHashMap();
 
         sortDependencies_fillRequests(moduleType, reqs);
-        logger.debug("reqs " + reqs);
+        logger.trace("reqs are:  " + reqs);
 
         if (skipSort) {
             return this.prune(reqs, moduleType);
@@ -1129,21 +1159,21 @@ public class YUI_util_Loader {
         for (Iterator it = _reqs.entrySet().iterator(); it.hasNext();) {
             Map.Entry pairs = (Map.Entry) it.next();
             String name = (String) pairs.getKey();
-            logger.debug("getting module for " + name);
+            logger.trace("getting module for " + name);
             Map dep = (Map) this.modules.get(name);
 
             if (dep.containsKey(YUI_SUPERSEDES)) {
                 List<String> override = (List<String>) dep.get(YUI_SUPERSEDES);
 
-                logger.debug("override " + name);
-                logger.debug("overrides are " + override);
+                logger.trace("override " + name);
+                logger.trace("overrides are " + override);
 
                 for (String val2 : override) {
                     //String i = (String) pairs2.getKey();
                     //Object val2 = pairs2.getValue();
 
                     if (reqs.containsKey(val2)) {
-                        logger.info("Removing (superceded by val) " + val2 + "\n");
+                        logger.trace("Removing (superceded by val) " + val2 + "\n");
                         reqs.remove(val2);
                     }
 
@@ -1265,21 +1295,21 @@ public class YUI_util_Loader {
 
         if (this.skins.size() > 0) {
             for (String value : (Collection<String>) skins.values()) {
-                logger.debug("[sortDependencies] putting into sorted value is " + value);
+                logger.trace("[sortDependencies] putting into sorted value is " + value);
                 sorted.put(value, true);
             }
         }
         this.dirty = false;
         this.sorted = sorted;
         Map retval = this.prune(sorted, moduleType);
-        logger.debug("_sorted" + this.sorted);
-        logger.debug("retval " + retval);
+        logger.trace("_sorted" + this.sorted);
+        logger.trace("retval " + retval);
         return retval;
 
     }
 
     private void mapSatisfyingModule(String satisfied, String satisfier) {
-        logger.debug("[mapSatisfyingModule] with Params satisfied=" + satisfied + " and satisfier=" + satisfier);
+        logger.trace("[mapSatisfyingModule] with Params satisfied=" + satisfied + " and satisfier=" + satisfier);
 
 
         if (this.satisfactionMap == null) {
@@ -1461,8 +1491,6 @@ public class YUI_util_Loader {
         }
     }
 
-      
-
     /**
      * Retrieve the contents of a remote resource
      * @method getRemoteContent
@@ -1480,8 +1508,8 @@ public class YUI_util_Loader {
 
         logger.debug("[getRemoteContent] Lets check if we have Content for " + urlString + " cached");
         if (el == null) {
-                content = HTTPUtils.getRemoteContent(urlString);
-              // Experimenting: content =HTTPUtils.getRemoteContentNIO(urlString);
+            content = HTTPUtils.getRemoteContent(urlString);
+            // Experimenting: content =HTTPUtils.getRemoteContentNIO(urlString);
 
         } else {
             content = (String) el.getValue();
@@ -1492,8 +1520,7 @@ public class YUI_util_Loader {
     private List getProvides(String name) {
         List l = new LinkedList();
         l.add(name);
-//        logger.info("[getProvides] for"+name);
-//        logger.info("[getProvides] array"+l);
+
         if (this.modules.containsKey(name)) {
             Map m = (Map) this.modules.get(name);
             if (m.containsKey(YUI_SUPERSEDES)) {
@@ -1501,8 +1528,7 @@ public class YUI_util_Loader {
                 l.addAll(_l);
             }
         }
-//         logger.info("[getProvides] After for"+name);
-//       logger.info("[getProvides] After array"+l);
+
         return l;
     }
 
@@ -1624,27 +1650,15 @@ public class YUI_util_Loader {
     }
 
     private String getRaw(String name) {
-        if (!this.embedAvail) {
-            return "cURL and/or APC was not detected, so the content can't be embedded";
-        }
 
         String url = this.getUrl(name);
         return this.getRemoteContent(url);
         //$url = $this->getUrl($name);
     }
-    private boolean embedAvail = true;
 
     private String getContent(String name, String type) {
 
-        if (!this.embedAvail) {
-            return ("<!--// Curl, and HTTP client is not implemented yet its on my TODO list,  --> \n" + this.getLink(name, type));
-        }
-
         String url = this.getUrl(name);
-
-
-        //$this->log("URL: " . $url);
-
         if (url == null) {
             return "<!-- PATH FOR " + name + " NOT SPECIFIED -->";
         } else if (type.equals(YUI_CSS)) {
@@ -1655,52 +1669,7 @@ public class YUI_util_Loader {
 
     }
 
-    private String convertStreamToString(InputStream is) {
-        /*
-         * To convert the InputStream to String we use the BufferedReader.readLine()
-         * method. We iterate until the BufferedReader return null which means
-         * there's no more data to read. Each line will appended to a StringBuilder
-         * and returned as String.
-         */
-
-        logger.debug("Converting Input Stream to String : ");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        StringBuilder sb = new StringBuilder();
-
-        String line = null;
-        try {
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                is.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return sb.toString();
-    }
-
-    public InputStream loadResource(String name) {
-        logger.debug("Trying to Load Resource : " + name);
-        InputStream in = getClass().getResourceAsStream(name);
-        if (in == null) {
-            in = Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
-            if (in == null) {
-                in = getClass().getClassLoader().getResourceAsStream(name);
-            }
-        }
-        return in;
-    }
-
     public static int generateRandomKeySuffix() {
-
-        System.out.println("Generating 10 random integers in range 0..99.");
-
         //note a single Random object is reused here
         Random randomGenerator = new Random();
         int randomInt = 100;

@@ -26,11 +26,14 @@
  */
 package yui.classes.utils;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -235,5 +238,52 @@ public class IOUtils {
         }
         return bb.array();
 
+    }
+
+    /**
+     *
+     * Converts InputStream to String
+     * @param is
+     * @return
+     */
+      public static String convertStreamToString(InputStream is) {
+
+        logger.debug("Converting Input Stream to String : ");
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+
+        String line = null;
+        try {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+
+            } catch (IOException e) {
+                // do nothing
+            }
+        }
+
+        return sb.toString();
+    }
+
+    public static InputStream loadResource(String name) {
+        logger.debug("Trying to Load Resource : " + name);
+        InputStream in = getClazz().getResourceAsStream(name);
+        if (in == null) {
+            in = Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
+            if (in == null) {
+                in = getClazz().getClassLoader().getResourceAsStream(name);
+            }
+        }
+        return in;
+    }
+
+    private  static Class getClazz(){
+       return IOUtils.class;
     }
 }

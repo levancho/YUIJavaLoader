@@ -192,13 +192,13 @@ public class HTTPUtils {
     public static String getServerURL(HttpServletRequest request, boolean includeRequestURI) {
 
         String path = request.getContextPath();
-        logger.info("calculating server url path" + path);
+        logger.debug("calculating server url path" + path);
         String basePath = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-        logger.info("calculating server url basePath" + basePath);
+        logger.debug("calculating server url basePath" + basePath);
         if (includeRequestURI) {
             basePath += path + "/";
         }
-        logger.info("calculating server url all" + basePath);
+        logger.debug("calculating server url all" + basePath);
         // we could maybe try request.getRemoteHost()
 
         return basePath;
@@ -314,7 +314,7 @@ public class HTTPUtils {
                 sb.append(d.readLine());
 
             }
-            logger.debug("HTML we got  is" + sb.toString());
+            logger.trace("HTML we got  is" + sb.toString());
         } catch (IOException ex) {
             logger.error("IO Exception " + ex.getMessage());
         } catch (Exception e) {

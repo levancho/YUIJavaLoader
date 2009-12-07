@@ -58,7 +58,7 @@ public class Combo {
     private HttpServletResponse response;
     private String cacheKey = "yuiconfigLFU";
     private CacheManager cacheManager;
-    public   String serverURI;
+    public String serverURI;
     private String crtResourceBase;
 
     public void alphaImageLoaderPathCorrection(String... matches) {
@@ -77,7 +77,9 @@ public class Combo {
         cacheManager = CacheManager.create();
         //resourceGroup = new AResourceGroup(request.getQueryString());
         resourceGroup = new AResourceGroup(request);
+        logger.info("Calling init");
         init();
+        logger.info("after init");
     }
 
     private void init() {
@@ -91,15 +93,15 @@ public class Combo {
             HttpServletResponse res = (HttpServletResponse) response;
 
             HTTPUtils.setCacheExpireDate(res, 315360000);
-            res.setHeader(HTTPUtils.Headers.CONTENT_TYPE+"", resourceGroup.getContentType());
+            res.setHeader(HTTPUtils.Headers.CONTENT_TYPE + "", resourceGroup.getContentType());
 
             Cache c = cacheManager.getCache(cacheKey);
             if (c.isKeyInCache(serverURI + resourceGroup.getContentType())) {
-                logger.info("we found cache " + (serverURI + resourceGroup.getContentType()));
+                logger.debug("we found cache " + (serverURI + resourceGroup.getContentType()));
                 // TODO when we turn this into tag we send this  puppy to client.
-                logger.info(c.get(serverURI + resourceGroup.getContentType()).toString());
+                logger.debug(c.get(serverURI + resourceGroup.getContentType()).toString());
             } else {
-                logger.info("we dont have cache for  " + serverURI);
+                logger.debug("we dont have cache for  " + serverURI);
                 YUI_util_Loader loader = new YUI_util_Loader(resourceGroup.getVersion());
                 // todo do we need this? dont think so
 //                    $base   = PATH_TO_LIB . $yuiVersion . "/build/";
@@ -108,10 +110,10 @@ public class Combo {
 
                 //Detect and set a filter as needed (defaults to minified version)
                 if (resourceGroup.isDebug()) {
-                    logger.info("Found debug files ");
+                    logger.debug("Found debug files ");
                     loader.filter = YUI_util_Loader.YUI_DEBUG;
                 } else if (!resourceGroup.isDebug() && !resourceGroup.isMin()) {
-                    logger.info("assuming raw files");
+                    logger.debug("assuming raw files");
                     loader.filter = YUI_util_Loader.YUI_RAW;
                 }
 
@@ -123,14 +125,14 @@ public class Combo {
                 //        }
                 String raw = "";
                 String yuiComponent = "";
-                logger.info("Iterating through yuiFiles: " + resourceGroup.getGroup());
+                logger.debug("Iterating through yuiFiles: " + resourceGroup.getGroup());
                 for (String aResource : resourceGroup.getGroup()) {
                     String yuiFile = aResource;
-                    logger.info("for yuiFile: " + yuiFile);
+                    logger.debug("for yuiFile: " + yuiFile);
                     String parts[] = yuiFile.split("/");
 
                     if (parts != null && parts.length >= 3) {
-                        logger.info("for yuiFile Parts : " + Arrays.toString(parts));
+                        logger.debug("for yuiFile Parts : " + Arrays.toString(parts));
                         yuiComponent = parts[2];
 
                     } else {
@@ -138,9 +140,8 @@ public class Combo {
                         throw new RuntimeException("<!-- Unable to determine module name! -->");
                     }
 
-                    logger.info(HTTPUtils.Headers.CACHE_CONTROL + "");
 
-                    logger.info("loading following Components :  " + yuiComponent);
+                    logger.debug("loading following Components :  " + yuiComponent);
                     loader.loadSingle(yuiComponent);
                     if (resourceGroup.getContentType().equals(HTTPUtils.CONTENT_TYPE.JAVASCRIPT + "")) {
                         raw += loader.script_raw();
@@ -149,11 +150,11 @@ public class Combo {
                     } else {
                         Map cssResourceList = loader.css_data();
 
-                        logger.info("fetching css_data from loader :  " + cssResourceList);
+                        logger.debug("fetching css_data from loader :  " + cssResourceList);
 
                         Map cssResourceListCSS = (Map) cssResourceList.get("css");
 
-                        logger.info("cssResourceListCSS is :  " + cssResourceListCSS);
+                        logger.debug("cssResourceListCSS is :  " + cssResourceListCSS);
                         if (cssResourceListCSS != null) {
                             for (String key : (Set<String>) cssResourceListCSS.keySet()) {
                                 // TODO finish
@@ -172,7 +173,7 @@ public class Combo {
                         logger.trace("rawCSS after: " + raw);
                     }
                 }
-                logger.info("[putting in Cache]  key " + serverURI + resourceGroup.getContentType());
+                logger.debug("[putting in Cache]  key " + serverURI + resourceGroup.getContentType());
                 c.put(new Element(serverURI + resourceGroup.getContentType(), raw));
 //                        YUIcompressorAPI api =  new YUIcompressorAPI();
 //                        YUIcompressorAPI.Config  conf= api .new Config(null);
@@ -184,7 +185,7 @@ public class Combo {
 
     public String getRaw() {
         logger.info("[getRaw] checking cache");
-        if (serverURI == null || resourceGroup==null || resourceGroup.getContentType() == null || !cacheManager.cacheExists(cacheKey)) {
+        if (serverURI == null || resourceGroup == null || resourceGroup.getContentType() == null || !cacheManager.cacheExists(cacheKey)) {
             logger.info("[getRaw] we have to ReInit, something was wrong");
             init();
         }
