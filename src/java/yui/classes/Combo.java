@@ -193,9 +193,6 @@ public class Combo {
                                 if(matcher.matches()){
                                     crtResourceContent =matcher.replaceAll(alphaImageLoaderPathCorrection(matcher));
                                 }
-        
-
-
                                 raw += crtResourceContent;
                             }
                         }
