@@ -49,6 +49,7 @@ import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.Random;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -440,5 +441,96 @@ public class HTTPUtils {
         }
         System.out.println("Generated SUM : " + randomInt);
         return randomInt;
+    }
+
+
+    public static final String EXAMPLE_UA_SAFARI="Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_5_5; en-us) " +
+                                                 "AppleWebKit/525.26.2 (KHTML, like Gecko) Version/3.2 Safari/525.26.12";
+
+    public static final String EXAMPLE_UA_IE="Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; )";
+    
+    public static final String EXAMPLE_UA_FF="Mozilla/5.0 (Windows; U; Windows NT 5.2; en-GB; rv:1.8.1.18) " +
+                                             "Gecko/20081029 Firefox/2.0.0.18";
+
+    public static final String EXAMPLE_UA_Opera="Opera/9.80 (Windows NT 5.1; U; cs) Presto/2.2.15 Version/10.00";
+
+    
+
+     /**
+     * Check to see if the current request is originating from an IE browser whose
+     * version is less than version 7.0.  If so, return true, else false.
+     * @param request the current request
+     * @return true if less than IE 7.0, true otherwise
+     */
+    private boolean detectBrowser(HttpServletRequest request) {
+        // browser detection
+        String userAgent = request.getHeader("User-Agent");
+         userAgent = userAgent.toLowerCase().trim();
+
+        
+
+
+
+        if(userAgent == null || "".equals(userAgent))
+            return false;
+
+       if(userAgent.indexOf("windows")!=-1 || userAgent.indexOf("win32")!=-1){
+           logger.info("O.S is Windows");
+       }else if (userAgent.indexOf("windows")!=-1 ){
+            logger.info("O.S is macintosh ");
+       }
+
+       if(userAgent.indexOf("KHTML")!=-1){
+             logger.info("o.webkit=1");
+         }
+
+        if(userAgent.indexOf("AppleWebKit")!=-1){
+             logger.info("AppleWebKit/");
+             int ind = userAgent.indexOf("AppleWebKit/");
+             String sub = userAgent.substring(ind);
+             logger.info("AppleWebKit version is"+sub);
+
+
+             if(userAgent.indexOf("Mobile/")!=-1){
+                 logger.info("AppleWebKit iPhone or iPod Touch");
+             }else {
+                  Pattern subos = Pattern.compile("NokiaN[^/]*|Android \\d\\.\\d|webOS/\\d\\.\\d");
+
+             }
+             
+         }
+
+
+
+        // gecko based browser
+        if (userAgent.indexOf("msie") == -1) {
+            return false;
+        }
+        // ie version 7.0 on windows is the lowest minimum we'll take
+        else if (userAgent.indexOf("msie") != -1 && userAgent.indexOf("opera") == -1
+                && userAgent.indexOf("windows") != -1)
+        {
+            // boolean sp2 = userAgent.indexOf(" sv1;") != -1; // http://msdn.microsoft.com/workshop/author/dhtml/overview/aboutuseragent.asp
+            int verStart = userAgent.indexOf("msie ");
+            int verEnd = userAgent.indexOf(";", verStart);
+
+            // try to parse
+            try {
+                String rv = userAgent.substring(verStart+5, verEnd);
+                // strip out letters - always seem to be the last character (i.e. 1.4b, 1.5a)
+                if (Character.isLetter(rv.charAt(rv.length() - 1))) {
+                    rv = rv.substring(0, rv.length() - 1);
+                }
+
+                double ver = Double.parseDouble(rv);
+                return ver < 7; // || ver == 6 && !sp2;
+            }
+            catch (Exception e) {
+                logger.debug("Exception parsing UserAgent: " + userAgent, e);
+                return true;
+            }
+        }
+
+        return false;
     }
 }

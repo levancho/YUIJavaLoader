@@ -26,17 +26,13 @@
  */
 package yui.classes;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 
-import java.util.TimeZone;
+import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.sf.ehcache.Cache;
@@ -61,13 +57,13 @@ public class Combo {
     public String serverURI;
     private String crtResourceBase;
 
-    public void alphaImageLoaderPathCorrection(String... matches) {
-        // TODO
-//    $matchedFile  = substr($matches[1], strrpos($matches[1], "/") + 1);
-//    $newFilePath = 'AlphaImageLoader(src=\'' . $crtResourceBase . $matchedFile . '\'';
-//
-//    return $newFilePath;
-    }
+//    public void alphaImageLoaderPathCorrection(String... matches) {
+//        // TODO
+////    $matchedFile  = substr($matches[1], strrpos($matches[1], "/") + 1);
+////    $newFilePath = 'AlphaImageLoader(src=\'' . $crtResourceBase . $matchedFile . '\'';
+////
+////    return $newFilePath;
+//    }
 
     public Combo(HttpServletRequest _request, HttpServletResponse _response) {
 
@@ -80,6 +76,19 @@ public class Combo {
         logger.info("Calling init");
         init();
         logger.info("after init");
+    }
+
+    private String getLibPath (){
+        //TODO
+        return null;
+    }
+
+    //AlphaImageLoader\(src=[\'"](.*?)[\'"]
+    private String alphaImageLoaderPathCorrection(Matcher matches){
+        String matchOne = matches.group(1);
+        String matchedFile = matchOne.substring((matchOne.lastIndexOf("/") + 1));
+        String newPath = "AlphaImageLoader(src='"+ crtResourceBase +matchedFile +"'";
+        return newPath;
     }
 
     private void init() {
@@ -162,8 +171,30 @@ public class Combo {
                                 crtResourceBase = key.substring(0, (key.lastIndexOf("/") + 1));
                                 logger.info("crtResourceBase  is :  " + crtResourceBase);
 
+                                // TODO need test case for this regexps
                                 String crtResourceContent = loader.getRemoteContent(key);
-                                // TODO Image path correction
+
+                                // just filename or subdirs/filename (e.g) url(foo.png), url(foo/foo.png)
+                                // Groups:
+                                // 1   2        3                    4
+                                // (  ( url\( ) ( [^\.\.|^http]\S+ ) ( \) )  )
+                                crtResourceContent = crtResourceContent.replaceAll("((url\\()([^\\.\\.|^http]\\S+)(\\)))",
+                                        "'$2'"+crtResourceBase+"'$3'"+"'$4'");
+
+                                // slash filename (e.g.) url(/whatever)
+                                crtResourceContent = crtResourceContent.replaceAll("url\\(/","url("+crtResourceBase);
+
+                                // relative paths (e.g.) url(../../foo.png)
+                                crtResourceContent = crtResourceContent.replaceAll("(url\\()(\\.\\.\\/)+","url("+getLibPath());
+
+                                // AlphaImageLoader relative paths (e.g.) AlphaImageLoader(src='../../foo.png')
+                                Pattern alpaImagePattern = Pattern.compile("AlphaImageLoader\\(src=['\"](.*?)['\"]");
+                                Matcher matcher = alpaImagePattern.matcher(crtResourceContent);
+                                if(matcher.matches()){
+                                    crtResourceContent =matcher.replaceAll(alphaImageLoaderPathCorrection(matcher));
+                                }
+        
+
 
                                 raw += crtResourceContent;
                             }
