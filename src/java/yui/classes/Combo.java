@@ -190,7 +190,7 @@ public class Combo {
                                 // AlphaImageLoader relative paths (e.g.) AlphaImageLoader(src='../../foo.png')
                                 Pattern alpaImagePattern = Pattern.compile("AlphaImageLoader\\(src=['\"](.*?)['\"]");
                                 Matcher matcher = alpaImagePattern.matcher(crtResourceContent);
-                                if(matcher.matches()){
+                                if(matcher.find(1)){
                                     crtResourceContent =matcher.replaceAll(alphaImageLoaderPathCorrection(matcher));
                                 }
                                 raw += crtResourceContent;

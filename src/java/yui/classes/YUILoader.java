@@ -357,8 +357,8 @@ public class YUILoader {
             this.skin.put(YUI_PREFIX, "skin-");
 
             this.filters = new HashMap();
-            this.filters.put(YUI_RAW, new YUIFilter("-min.js", ".js"));
-            this.filters.put(YUI_DEBUG, new YUIFilter("-min.js", "-debug.js"));
+            this.filters.put(YUI_RAW, new YUIFilter("-min\\.js", "\\.js"));
+            this.filters.put(YUI_DEBUG, new YUIFilter("-min\\.js", "-debug\\.js"));
 
 
             Iterator it = this.modules.entrySet().iterator();
@@ -1611,7 +1611,7 @@ public class YUILoader {
         if (this.filter != null && !this.filter.trim().equals("")) {
             if (this.filters.containsKey(this.filter)) {
                 YUIFilter yuif = (YUIFilter) this.filters.get(this.filter);
-                url.replaceAll(yuif.getSearch(), yuif.getReplace());
+                url=url.replaceAll(yuif.getSearch(), yuif.getReplace());
             }
         }
         return url;

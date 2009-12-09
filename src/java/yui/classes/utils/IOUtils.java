@@ -27,6 +27,8 @@
 package yui.classes.utils;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -34,10 +36,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.text.NumberFormat;
+import java.util.zip.GZIPOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +49,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author leo
  */
-public class IOUtils {
+public class IOUtils extends org.apache.commons.io.IOUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(HTTPUtils.class);
 
@@ -246,7 +250,7 @@ public class IOUtils {
      * @param is
      * @return
      */
-      public static String convertStreamToString(InputStream is) {
+    public static String convertStreamToString(InputStream is) {
 
         logger.debug("Converting Input Stream to String : ");
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
@@ -283,7 +287,53 @@ public class IOUtils {
         return in;
     }
 
-    private  static Class getClazz(){
-       return IOUtils.class;
+    private static Class getClazz() {
+        return IOUtils.class;
+    }
+
+    public static String getFileName(String aPath) {
+        if (aPath.lastIndexOf('/') < 0) {
+            return aPath;
+        }
+        return aPath.substring(aPath.lastIndexOf('/') + 1);
+    }
+
+    public static int gzipAndCopyContent(OutputStream out, byte[] bytes) throws IOException {
+        ByteArrayOutputStream baos = null;
+        GZIPOutputStream gzos = null;
+
+        int length = 0;
+        try {
+            baos = new ByteArrayOutputStream();
+            gzos = new GZIPOutputStream(baos);
+
+            gzos.write(bytes);
+            gzos.finish();
+            gzos.flush();
+            gzos.close();
+
+            byte[] gzippedBytes = baos.toByteArray();
+            // Set the size of the file.
+            length = gzippedBytes.length;
+            // Write the binary context out
+
+            copy(new ByteArrayInputStream(gzippedBytes), out);
+            out.flush();
+        } finally {
+            try {
+                if (gzos != null) {
+                    gzos.close();
+                }
+            } catch (Exception ignored) {
+                
+            }
+            try {
+                if (baos != null) {
+                    baos.close();
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return length;
     }
 }

@@ -25,6 +25,7 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package yui.classes.utils;
+
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
@@ -49,6 +50,7 @@ import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.Random;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -65,11 +67,9 @@ import yui.classes.AClientCachable;
 public class HTTPUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(HTTPUtils.class);
-
     public final static String GZIP = "gzip";
-     public final static String XGZIP = "x-gzip";
+    public final static String XGZIP = "x-gzip";
     public final static String DEFLATE = "deflate";
-
     public static final String CACHE_NO_CACHE = "no-cache";
     public static final String CACHE_NO_STORE = "no-store";
     public static final String CACHE_MAX_AGE = "max-age";
@@ -82,7 +82,6 @@ public class HTTPUtils {
     public static final String CACHE_MUST_REVALIDATE = "must-revalidate";
     public static final String CACHE_PROXY_REVALIDATE = "proxy-revalidate";
     public static final String CACHE_SHARED_MAX_AGE = "s-maxage";
-
     public static String eTagDefaultPrefix = "_YUIJL_";
 
     public static String getDefaultEtagPrefix() {
@@ -94,11 +93,10 @@ public class HTTPUtils {
         return eTagDefaultPrefix + String.valueOf(Postffix);
     }
 
-
-  /**
- * HTTP Content_Type(MIME type) Enums
- *
- */
+    /**
+     * HTTP Content_Type(MIME type) Enums
+     *
+     */
     public enum CONTENT_TYPE {
 
         JAVASCRIPT("application/x-javascript"),
@@ -163,8 +161,6 @@ public class HTTPUtils {
         return ((e != null) && (GZIP.indexOf(e) != -1 || req.getHeader("---------------") != null));
     }
 
-
-
     public static String getNormalizedServletPath(HttpServletRequest request) {
         String servletPath = request.getServletPath();
         String pathInfo = request.getPathInfo();
@@ -208,10 +204,10 @@ public class HTTPUtils {
 
     // TODO
     public String localPath(HttpServletRequest request, String path) {
-        char seperator=File.separatorChar;
+        char seperator = File.separatorChar;
         String absolutePath = request.getSession().getServletContext().getRealPath(request.getRequestURI());
         absolutePath = absolutePath.substring(0, absolutePath.lastIndexOf(seperator) + 1);
-        return absolutePath + path.replace('/',seperator );
+        return absolutePath + path.replace('/', seperator);
     }
 
     public static void addHeader(HttpServletResponse res, Headers name, String... values) {
@@ -220,7 +216,6 @@ public class HTTPUtils {
         }
     }
 
-    
     public static boolean containsAllHeaders(HttpServletRequest req, Headers... headernames) {
         for (Headers header : headernames) {
             if (req.getHeader(header + "") == null) {
@@ -241,6 +236,12 @@ public class HTTPUtils {
         cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
+
+    
+    public static boolean isModified(HttpServletRequest request, byte[] bytes, long modifiedTime) {
+        return isModified(request, bytes.length, modifiedTime);
+    }
+    
 
     public static boolean isModified(HttpServletRequest req, long fileSize, long modifiedTime) {
 
@@ -281,10 +282,12 @@ public class HTTPUtils {
      * @param req
      * @return
      */
-    public static String  getGZIPHeaderValue(HttpServletRequest req ){
-        if(!canGZip(req)) return null;
-            String e = req.getHeader(Headers.REQ_ACCEPT_ENCODING + "");
-            return  (e.indexOf(XGZIP) != -1 ? XGZIP : GZIP);
+    public static String getGZIPHeaderValue(HttpServletRequest req) {
+        if (!canGZip(req)) {
+            return null;
+        }
+        String e = req.getHeader(Headers.REQ_ACCEPT_ENCODING + "");
+        return (e.indexOf(XGZIP) != -1 ? XGZIP : GZIP);
     }
 
     public static DateFormat htmlExpiresDateFormat() {
@@ -354,7 +357,7 @@ public class HTTPUtils {
     }
 
     //"ISO-8859-1"
-     // Experimental
+    // Experimental
     public static String getRemoteContentNIO(String urlString, String encoding) {
 
 
@@ -416,7 +419,7 @@ public class HTTPUtils {
         } catch (UnknownHostException e) {
             logger.error(e.getMessage());
         } catch (MalformedURLException ex) {
-               logger.error(ex.getMessage());
+            logger.error(ex.getMessage());
         } catch (IOException e) {
             System.err.println(e);
         } finally {
@@ -430,7 +433,6 @@ public class HTTPUtils {
         return ret;
     }
 
-
     public static int generateRandomKeySuffix() {
         //note a single Random object is reused here
         Random randomGenerator = new Random();
@@ -442,95 +444,137 @@ public class HTTPUtils {
         System.out.println("Generated SUM : " + randomInt);
         return randomInt;
     }
+    public static final String EXAMPLE_UA_SAFARI = "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_5_5; en-us) "
+            + "AppleWebKit/525.26.2 (KHTML, like Gecko) Version/3.2 Safari/525.26.12";
+    public static final String EXAMPLE_UA_IE = "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; )";
+    public static final String EXAMPLE_UA_FF = "Mozilla/5.0 (Windows; U; Windows NT 5.2; en-GB; rv:1.8.1.18) "
+            + "Gecko/20081029 Firefox/2.0.0.18";
+    public static final String EXAMPLE_UA_Opera = "Opera/9.80 (Windows NT 5.1; U; cs) Presto/2.2.15 Version/10.00";
 
-
-    public static final String EXAMPLE_UA_SAFARI="Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_5_5; en-us) " +
-                                                 "AppleWebKit/525.26.2 (KHTML, like Gecko) Version/3.2 Safari/525.26.12";
-
-    public static final String EXAMPLE_UA_IE="Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; )";
-    
-    public static final String EXAMPLE_UA_FF="Mozilla/5.0 (Windows; U; Windows NT 5.2; en-GB; rv:1.8.1.18) " +
-                                             "Gecko/20081029 Firefox/2.0.0.18";
-
-    public static final String EXAMPLE_UA_Opera="Opera/9.80 (Windows NT 5.1; U; cs) Presto/2.2.15 Version/10.00";
-
-    
-
-     /**
-     * Check to see if the current request is originating from an IE browser whose
-     * version is less than version 7.0.  If so, return true, else false.
-     * @param request the current request
-     * @return true if less than IE 7.0, true otherwise
+    /**
+     * TODO not finished
+     * Detect Browser
+     * based on YUI3 UA javascript Code.
+     * @see  http://developer.yahoo.com/yui/3/examples/yui/yui-ua.html
      */
-    private boolean detectBrowser(HttpServletRequest request) {
+    public static void detectBrowser(HttpServletRequest request) {
         // browser detection
         String userAgent = request.getHeader("User-Agent");
-         userAgent = userAgent.toLowerCase().trim();
+        userAgent = userAgent.toLowerCase().trim();
+        boolean isWebkit = false;
 
-        
+        logger.info("(detectBrowser) running tests on UA: [" + userAgent + "]");
+
+        // if(userAgent == null || "".equals(userAgent))
 
 
-
-        if(userAgent == null || "".equals(userAgent))
-            return false;
-
-       if(userAgent.indexOf("windows")!=-1 || userAgent.indexOf("win32")!=-1){
-           logger.info("O.S is Windows");
-       }else if (userAgent.indexOf("windows")!=-1 ){
+        if (userAgent.indexOf("windows") != -1 || userAgent.indexOf("win32") != -1) {
+            logger.info("O.S is Windows");
+        } else if (userAgent.indexOf("windows") != -1) {
             logger.info("O.S is macintosh ");
-       }
-
-       if(userAgent.indexOf("KHTML")!=-1){
-             logger.info("o.webkit=1");
-         }
-
-        if(userAgent.indexOf("AppleWebKit")!=-1){
-             logger.info("AppleWebKit/");
-             int ind = userAgent.indexOf("AppleWebKit/");
-             String sub = userAgent.substring(ind);
-             logger.info("AppleWebKit version is"+sub);
-
-
-             if(userAgent.indexOf("Mobile/")!=-1){
-                 logger.info("AppleWebKit iPhone or iPod Touch");
-             }else {
-                  Pattern subos = Pattern.compile("NokiaN[^/]*|Android \\d\\.\\d|webOS/\\d\\.\\d");
-
-             }
-             
-         }
-
-
-
-        // gecko based browser
-        if (userAgent.indexOf("msie") == -1) {
-            return false;
         }
-        // ie version 7.0 on windows is the lowest minimum we'll take
-        else if (userAgent.indexOf("msie") != -1 && userAgent.indexOf("opera") == -1
-                && userAgent.indexOf("windows") != -1)
-        {
-            // boolean sp2 = userAgent.indexOf(" sv1;") != -1; // http://msdn.microsoft.com/workshop/author/dhtml/overview/aboutuseragent.asp
-            int verStart = userAgent.indexOf("msie ");
-            int verEnd = userAgent.indexOf(";", verStart);
 
-            // try to parse
-            try {
-                String rv = userAgent.substring(verStart+5, verEnd);
-                // strip out letters - always seem to be the last character (i.e. 1.4b, 1.5a)
-                if (Character.isLetter(rv.charAt(rv.length() - 1))) {
-                    rv = rv.substring(0, rv.length() - 1);
+        if (userAgent.indexOf("KHTML") != -1) {
+            logger.info("o.webkit=1");
+            isWebkit = true;
+        }
+
+        Pattern webkit = Pattern.compile("applewebkit\\/([^\\s]*)");
+        Matcher wm = webkit.matcher(userAgent);
+
+
+        if (wm.find(0) && wm.find(1)) {
+            logger.info("applewebkit/");
+            logger.info("applewebkit version is" + wm.group(1));
+
+            if (userAgent.indexOf("mobile/") != -1) {
+                logger.info("AppleWebKit iPhone or iPod Touch");
+            } else {
+                // refactor into mobilproviders list somehow, to dinamically build
+                // regext patter string e.g: |+forEachProviderRegExp().
+                Pattern subos = Pattern.compile("nokian[^/]*|android \\d\\.\\d|webos/\\d\\.\\d");
+                Matcher m = subos.matcher(userAgent);
+
+                if (m.find(0)) {
+                    logger.info("Phone is " + m.group(0));
+                } else {
+                    logger.info("not from Phone");
+                }
+            }
+
+            Pattern aiTest = Pattern.compile("adobeair\\/([^\\s]*)");
+            Matcher m2 = aiTest.matcher(userAgent);
+            if (m2.find(0)) {
+                logger.info("Its Adobe Air");
+            }
+
+        }
+
+        if (!isWebkit) {
+            //"opera/9.80 (windows nt 6.0; u; en) presto/2.2.15 version/10.10
+            Pattern opera = Pattern.compile("opera[\\s/]([^\\s]*)");
+            Matcher om = opera.matcher(userAgent);
+            if (om.find(0)) {
+                logger.info("got Opera");
+            }
+            if (om.find(1)) {
+                logger.info("gor Opera Version as well");
+                Matcher om2 = Pattern.compile("opera mini[^;]*").matcher(userAgent);
+                if (om2.find(0)) {
+                    logger.info("gor Opera Mini" + om2.group(0));
                 }
 
-                double ver = Double.parseDouble(rv);
-                return ver < 7; // || ver == 6 && !sp2;
+
+            } else { // not Opera or Webkit
+                Matcher omie = Pattern.compile("msie\\s([^;]*)").matcher(userAgent);
+                if (omie.find(0) && omie.find(1)) {
+                    logger.info("ie is " + omie.group(1));
+                } else {// not opera, webkit, or ie
+                    Matcher omg = Pattern.compile("gecko/([^\\s]*)").matcher(userAgent);
+
+                    if (omg.find(0)) {
+                        logger.info("gecko detected, look for the version");
+                        Matcher omgv = Pattern.compile("rv:([^\\s\\)]*)").matcher(userAgent);
+                        if (omgv.find(0) && omgv.find(1)) {
+                            logger.info("gecko version is: " + omgv.group(1));
+                        }
+                    }
+                }
+
             }
-            catch (Exception e) {
-                logger.debug("Exception parsing UserAgent: " + userAgent, e);
-                return true;
-            }
+
         }
 
-        return false;
+    }
+
+    public static boolean isCompressionPossible(HttpServletRequest request, HttpServletResponse response) {
+        boolean compress = true;
+
+        // this attribute can be set, mostly in filters, to notify
+        // Servlet not to compress, for example if we have
+        // compression filter running.
+        // TODO Externilize "DO_NOT_COMPRESS"
+        if (request.getAttribute("DO_NOT_COMPRESS") != null
+                || !HTTPUtils.canGZip(request)) {
+            logger.info("[isCompressionPossible] based on request compression is not possible");
+            compress = false;
+        }
+
+        if (response.containsHeader("Content-Encoding")) {
+            logger.info("[isCompressionPossible] based on response, compression has already being applied," +
+                    "response has 'Content-Encoding' header set ");
+            compress = false;
+        }
+        logger.info("[isCompressionPossible] returning: "+compress);
+        return compress;
+    }
+
+    public static  boolean isGoodRequest(HttpServletRequest req){
+        return !(req.getRequestURI().indexOf("..")>0);
+    }
+
+   public static void setCompressionHeaders(HttpServletResponse response) {
+        response.setHeader("Content-Encoding", "gzip");
+        response.setHeader("Vary", "Accept-Encoding");
     }
 }

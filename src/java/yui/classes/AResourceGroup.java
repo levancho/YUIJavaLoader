@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
+import javax.activation.MimetypesFileTypeMap;
 import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,40 +59,48 @@ public class AResourceGroup {
     private String[] metaInfo;
     private String version;
     private String filterType;
-    
     //TODO  should be ENUM
     private String contentType;
+
+    // depricate this
     private String queryString = "";
 
-    AResourceGroup(String queryString) {
+   public AResourceGroup(String queryString) {
         parseUrl(queryString);
     }
 
-
-    AResourceGroup(HttpServletRequest request) {
+   public AResourceGroup(HttpServletRequest request) {
         parseRequest(request);
     }
 
-    private void extractmetaInfo (String item) {
-
-                this.contentType =(item.indexOf(".js") != -1) ? HTTPUtils.CONTENT_TYPE.JAVASCRIPT+"": HTTPUtils.CONTENT_TYPE.CSS+"";
-                this.metaInfo = item.split("/");
-                logger.debug("metainfo:  " + Arrays.toString(this.getMetaInfo()));
-                this.version = this.getMetaInfo()[0];
+   public AResourceGroup(String queryStringIdentifier, List<String> items) {
+        //parseRequest(request);
+        this.queryString = queryStringIdentifier;
+        this._group = items;
+        extractmetaInfo(_group.get(0));
     }
 
-     private void parseRequest(HttpServletRequest request) {
+    private void extractmetaInfo(String item) {
+        // TODO more validation and  use MimetypesFileTypeMap map = new MimetypesFileTypeMap();
+        this.contentType = (item.indexOf(".js") != -1) ? HTTPUtils.CONTENT_TYPE.JAVASCRIPT + "" : HTTPUtils.CONTENT_TYPE.CSS + "";
+        this.metaInfo = item.split("/");
+        logger.debug("metainfo:  " + Arrays.toString(this.getMetaInfo()));
+        this.version = this.getMetaInfo()[0];
+    }
+
+    private void parseRequest(HttpServletRequest request) {
         try {
             queryString = URLDecoder.decode(request.getQueryString(), "UTF-8");
         } catch (UnsupportedEncodingException ex) {
-               logger.error("error occured getting query String" + ex );
+            logger.error("error occured getting query String" + ex);
         }
 
         _group = new ArrayList(request.getParameterMap().size());
         for (Enumeration<String> e = request.getParameterNames(); e.hasMoreElements();) {
-            String i =  e.nextElement();
-            logger.debug("Adding Item: " +  i);
-            _group.add( i);
+            // TODO grep Match on structure
+            String i = e.nextElement();
+            logger.debug("Adding Item: " + i);
+            _group.add(i);
         }
 
         extractmetaInfo(_group.get(0));
@@ -125,7 +134,7 @@ public class AResourceGroup {
                 }
 
                 extractmetaInfo(yuiFiles[0]);
-                _group= Arrays.asList(yuiFiles);
+                _group = Arrays.asList(yuiFiles);
             }
 
         } catch (UnsupportedEncodingException ex) {

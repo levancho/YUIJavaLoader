@@ -5,16 +5,56 @@
         <servlet-name>combo</servlet-name>
         <servlet-class>yui.classes.servlets.ComboServlet</servlet-class>
     </servlet>
+    <servlet>
+        <description>Minifies, and comresses requested, css and js files</description>
+        <servlet-name>minify</servlet-name>
+        <servlet-class>yui.classes.servlets.MinifyServlet</servlet-class>
+        <init-param>
+            <description>default delimeter for combined url pattern,
+            e.g  f=fileone.js,filetwo.js
+            </description>
+            <param-name>comboFileDelimeter</param-name>
+            <param-value>,</param-value>
+        </init-param>
+
+         <init-param>
+            <description>default location of resources</description>
+            <param-name>defaultResourceRoot</param-name>
+            <param-value>/lib</param-value>
+        </init-param>
+        
+         <init-param>
+            <description>enable or disable gzip compression
+            </description>
+            <param-name>compressionEnabled</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        
+         <init-param>
+            <description>allow debugging, this is just a switch, 
+                         debug parameter still needs to be included into url
+            </description>
+            <param-name>debugEnabled</param-name>
+            <param-value>true</param-value>
+        </init-param>
+
+
+
+    </servlet>
     <servlet-mapping>
         <servlet-name>combo</servlet-name>
         <url-pattern>/combo</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>minify</servlet-name>
+        <url-pattern>/minify</url-pattern>
     </servlet-mapping>
     <session-config>
         <session-timeout>
             30
         </session-timeout>
     </session-config>
-<welcome-file-list>
+    <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
         <welcome-file>index.html</welcome-file>
     </welcome-file-list>

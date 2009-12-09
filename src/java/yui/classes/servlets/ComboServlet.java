@@ -34,6 +34,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import yui.classes.Combo;
+import yui.classes.utils.HTTPUtils;
 
 /**
  *
@@ -53,6 +54,8 @@ public class ComboServlet  extends  HttpServlet{
                     HttpServletResponse response)
       throws ServletException, IOException {
 
+
+     HTTPUtils.detectBrowser(request);
      Combo combo = new Combo(request,response);
 
 
