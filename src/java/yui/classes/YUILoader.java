@@ -59,11 +59,11 @@ public class YUILoader {
     public enum OUTPUT_TYPE {
 
         YUI_FULLJSON("FULLJSON"),
-        YUI_DATA("FULLJSON"),
-        YUI_JSON("FULLJSON"),
-        YUI_TAGS(""),
-        YUI_EMBED(""),
-        YUI_RAW("FULLJSON");
+        YUI_DATA("DATA"),
+        YUI_JSON("JSON"),
+        YUI_TAGS("TAGS"),
+        YUI_EMBED("EMBED"),
+        YUI_RAW("RAW");
 
         OUTPUT_TYPE(String _name) {
             this.name = _name;
@@ -106,16 +106,16 @@ public class YUILoader {
     public static final String YUI_AFTER = "after";
     public static final String YUI_BASE = "base";
     // public static final String YUI_CSS = "css";
-    public static final String YUI_DATA = "DATA";
+    //public static final String YUI_DATA = "DATA";
     public static final String YUI_DEPCACHE = "depCache";
-    public static final String YUI_DEBUG = "DEBUG";
+
     //public static final String YUI_EMBED = "EMBED";
     public static final String YUI_FILTERS = "filters";
     public static final String YUI_FULLPATH = "fullpath";
     // public static final String YUI_FULLJSON = "FULLJSON";
     public static final String YUI_GLOBAL = "global";
     //public static final String YUI_JS = "js";
-    public static final String YUI_JSON = "JSON";
+    //public static final String YUI_JSON = "JSON";
     public static final String YUI_MODULES = "modules";
     public static final String YUI_SUBMODULES = "submodules";
     public static final String YUI_EXPOUND = "expound";
@@ -126,8 +126,12 @@ public class YUILoader {
     public static final String YUI_PKG = "pkg";
     public static final String YUI_PREFIX = "prefix";
     public static final String YUI_PROVIDES = "provides";
+
+
+    public static final String YUI_DEBUG = "DEBUG";
     public static final String YUI_RAW = "RAW";
     public static final String YUI_REPLACE = "replace";
+    
     public static final String YUI_REQUIRES = "requires";
     public static final String YUI_ROLLUP = "rollup";
     public static final String YUI_SATISFIES = "satisfies";
@@ -1171,7 +1175,7 @@ public class YUILoader {
         Map reqs = new LinkedHashMap();
         List top = new LinkedList();
         List<String> notdone = new LinkedList();
-        Map sorted = new LinkedHashMap();
+        Map _sorted = new LinkedHashMap();
 
         sortDependencies_fillRequests(moduleType, reqs);
         logger.trace("reqs are:  " + reqs);
@@ -1270,10 +1274,10 @@ public class YUILoader {
             if (count > 200) {
                 logger.error("YUI_LOADER ERROR: sorting could not be completed, there may be a circular dependency");
                 for (Object name : notdone) {
-                    sorted.put(name, name);
+                    _sorted.put(name, name);
                 }
-                //sorted.putAll(notdone);
-                return sorted;
+                //_sorted.putAll(notdone);
+                return _sorted;
             }
 
 
@@ -1312,7 +1316,7 @@ public class YUILoader {
 
                     newreqs:
                     for (String depname : (Set<String>) newreqs.keySet()) {
-                        if (this.accountedFor.contains(depname) || this.listSatisfies(depname, sorted)) {
+                        if (this.accountedFor.contains(depname) || this.listSatisfies(depname, _sorted)) {
                             logger.debug("we have acounted : [" + depname + "] ");
                         } else {
                             List<String> tmp = new LinkedList<String>();
@@ -1341,12 +1345,12 @@ public class YUILoader {
                         }
                     }
                 }
-                sorted.put(name, name);
+                _sorted.put(name, name);
                 logger.debug("removing 2 :  " + name);
                 notdone.remove(name);
             }
         }
-        for (String name : (Set<String>) sorted.keySet()) {
+        for (String name : (Set<String>) _sorted.keySet()) {
             String skinName = this.skinSetup(name);
         }
 
@@ -1354,12 +1358,12 @@ public class YUILoader {
         if (this.skins.size() > 0) {
             for (String value : (Collection<String>) skins.values()) {
                 logger.trace("[sortDependencies] putting into sorted value is " + value);
-                sorted.put(value, true);
+                _sorted.put(value, true);
             }
         }
         this.dirty = false;
-        this.sorted = sorted;
-        Map retval = this.prune(sorted, moduleType);
+        this.sorted = _sorted;
+        Map retval = this.prune(_sorted, moduleType);
         logger.trace("_sorted" + this.sorted);
         logger.trace("retval " + retval);
         return retval;
@@ -1518,7 +1522,7 @@ public class YUILoader {
             this.clearComboLink(moduleType);
         }
 
-        if (outputType.equals(YUI_DATA)) {
+        if (outputType.equals(OUTPUT_TYPE.YUI_DATA)) {
             return json.toString();
         }
 

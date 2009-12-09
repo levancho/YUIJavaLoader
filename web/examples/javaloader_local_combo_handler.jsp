@@ -11,6 +11,8 @@
       YUILoader  loader= new YUILoader("2.8.0");
     //Specify YUI components to load
     loader.combine = true;
+   // loader.filter = YUILoader.YUI_DEBUG;
+
     loader.comboBase="http://localhost:8084/YUIJavaLoader/combo?";
     loader.load("editor", "calendar", "container", "animation", "fonts");
     //Output the tags (this call would most likely be placed in the document head)

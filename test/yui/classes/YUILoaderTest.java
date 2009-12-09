@@ -83,7 +83,7 @@ public class YUILoaderTest {
         logger.info("setProcessedModuleType");
         loader.setProcessedModuleType();
 
-        assertTrue(loader.hasProcessedModuleType("ALL"));
+        assertTrue(loader.hasProcessedModuleType(YUILoader.MODULE_TYPE.ALL));
     }
 
     /**
@@ -94,7 +94,7 @@ public class YUILoaderTest {
         logger.info("setProcessedModuleType");
         String moduleType = "";
         
-        loader.setProcessedModuleType("ALL");
+        loader.setProcessedModuleType(YUILoader.MODULE_TYPE.ALL);
 
         assertTrue(loader.hasProcessedModuleType());
 
