@@ -65,7 +65,14 @@ public class AResourceGroup {
     // depricate this
     private String queryString = "";
 
-   public AResourceGroup(String queryString) {
+    private String splitDelimeter;
+
+    public AResourceGroup(String queryString) {
+        this(queryString,"&");
+    }
+
+   public AResourceGroup(String queryString,String delimeter) {
+       this.splitDelimeter = delimeter;
         parseUrl(queryString);
     }
 
@@ -116,6 +123,7 @@ public class AResourceGroup {
 
     }
 
+    //delimeter defaults to &
     private void parseUrl(String _q) {
         String[] yuiFiles = null;
 
@@ -127,7 +135,7 @@ public class AResourceGroup {
             logger.debug("queryStringis " + getQueryString());
 
             if (!queryString.equals("")) {
-                yuiFiles = getQueryString().split("&");
+                yuiFiles = getQueryString().split("["+this.splitDelimeter+"]");
                 if (yuiFiles == null || yuiFiles.length == 0) {
                     logger.debug("thre is nothing in query?" + getQueryString());
                     return;

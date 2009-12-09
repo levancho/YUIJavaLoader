@@ -29,29 +29,27 @@ package yui.classes;
 
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static org.junit.Assert.*;
 
 /**
- * TODO
+ *
  * @author leo
  */
-public class YUILoaderTest {
-
+public class YUI2JavaLoaderFilterTest {
     YUILoader loader;
     String yuiVersion;
-    Logger logger = LoggerFactory.getLogger(YUILoaderTest.class);
+    Logger logger = LoggerFactory.getLogger(YUI2JavaLoaderFilterTest.class);
 
-    public YUILoaderTest() {
+    public YUI2JavaLoaderFilterTest() {
     }
 
     @BeforeClass
     public static void setUpClass() throws Exception {
-
     }
 
     @AfterClass
@@ -60,93 +58,53 @@ public class YUILoaderTest {
 
     @Before
     public void setUp() {
-       yuiVersion = System.getProperty("yui.version" );
-        logger.info("[YUILoaderTest] yuiversion is:"+yuiVersion);
+        yuiVersion = System.getProperty("yui.version.2x");
+        if(yuiVersion==null)yuiVersion="2.7.0";
+        logger.info("[YUIJavaLoaderFilterTest] yuiversion is:"+yuiVersion);
         loader = new YUILoader(yuiVersion);
-        loader.filter = YUILoader.YUI_RAW;
-        loader.load("yahoo", "dom","calendar", "event", "tabview", "grids", "fonts", "reset","logger");
+
         logger.info("Creating YUILoader loader");
     }
 
     @After
     public void tearDown() {
-        loader = null;
     }
 
-   
 
-    /**
-     * Test of setProcessedModuleType method, of class YUILoader.
-     */
-    @Test
-    public void testSetProcessedModuleType_0args() {
-        logger.info("setProcessedModuleType");
-        loader.setProcessedModuleType();
 
-        assertTrue(loader.hasProcessedModuleType("ALL"));
+      @Test
+    public void testRaw() {
+        loader.filter = YUILoader.YUI_RAW;
+        loader.load("yahoo", "dom","calendar", "event", "tabview", "grids", "fonts", "reset","logger");
+
+        // TODO review the generated test code and remove the default call to fail.
+
+        String ret = loader.script();
+
+        Assert.assertTrue(ret.indexOf("-debug")==-1 && ret.indexOf("-min")==-1);
     }
 
-    /**
-     * Test of setProcessedModuleType method, of class YUILoader.
-     */
-    @Test
-    public void testSetProcessedModuleType_String() {
-        logger.info("setProcessedModuleType");
-        String moduleType = "";
-        
-        loader.setProcessedModuleType("ALL");
-
-        assertTrue(loader.hasProcessedModuleType());
-
-    }
-
- 
-
- 
-
-    /**
-     * Test of script method, of class YUILoader.
-     */
-    @Test
-    public void testScript() {
-        logger.info("script");
-        
-        // lame but still better than nothing for now.
-        String result = loader.script();
-        assertNotNull(result);
-  
-    }
-
-    /**
-     * Test of css method, of class YUILoader.
-     */
-    @Test
-    public void testCss() {
-        logger.info("css");
-        
-          // lame but still better than nothing for now.
-        String result = loader.css();
-        assertNotNull(result);
-    }
 
      @Test
-    public void testNoUndefined() {
-        logger.info("css");
-        assertEquals(loader.howManyUndefined(), 0);
+    public void testMin() {
+        loader.filter = "";//min
+        loader.load("yahoo", "dom","calendar", "event", "tabview", "grids", "fonts", "reset","logger");
+        String ret = loader.script();
+
+        Assert.assertTrue(ret.indexOf("-debug")==-1 && ret.indexOf("-min")!=-1);
+        // TODO review the generated test code and remove the default call to fail.
     }
-   
 
-    
 
-    /**
-     * Test of getLink method, of class YUILoader.
-     */
-    @Test
-    public void testGetLink() {
-        logger.info("getLink");
-          // lame but still better than nothing for now.
-        String result = loader.script();
-        assertNotNull(result);
+      @Test
+    public void testDebug() {
+        loader.filter = YUILoader.YUI_DEBUG;
+        loader.load("yahoo", "dom","calendar", "event", "tabview", "grids", "fonts", "reset","logger");
+        // TODO review the generated test code and remove the default call to fail.
+        String ret = loader.script();
+        
+        Assert.assertTrue(ret.indexOf("-debug")!=-1 && ret.indexOf("-min")==-1);
+
     }
 
 }

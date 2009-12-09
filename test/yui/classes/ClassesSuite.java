@@ -51,7 +51,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
         yui.classes.YUILoaderTest.class,
-         yui.classes.YUIJavaLoaderBasicTest.class
+         yui.classes.YUI2JavaLoaderFilterTest.class
 
 })
 public class ClassesSuite {

@@ -56,7 +56,7 @@ public class MinifyServlet extends HttpServlet {
 
     private boolean compressionEnabled = true;
     private boolean debugEnabled = false;
-    private String comboFileDelimeter=",";
+    private String comboFileDelimeter=",;";
 
     private long lastRefresh = 0;
 
@@ -72,15 +72,13 @@ public class MinifyServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
 
-        // Basing standarts of a minify project
+        // Basing standarts off a minify project
         //@http://code.google.com/p/minify/source/browse/tags/release_2.1.3/min/README.txt
 
         // TODO once working make this  more elastic/configurable  .
         //sevletConfigParameters.put("f", new ArrayList<String>());
         //sevletConfigParameters.put("b", "js");
 
-        
-        // Can override the default root path
         String resourceRootPath = config.getInitParameter("resourceRootPath");
         lastRefresh = System.currentTimeMillis();
         defaultResourceRoot = resourceRootPath != null ? resourceRootPath : "/";
@@ -134,18 +132,19 @@ public class MinifyServlet extends HttpServlet {
     private boolean parseParams (HttpServletRequest req){
 
         if(req.getParameter("f")==null){
+            // too harsh?
+            //throw new RuntimeException("Requred Parameter 'f' is missing");
             return false;
         }
 
-        String files[] = req.getParameter("f").split(comboFileDelimeter);
+        String files[] = req.getParameter("f").split("["+comboFileDelimeter+"]");
         if(files==null || !(files.length>0)){
             return false;
         }
-        requestParameters.put("f", new AResourceGroup(req.getQueryString(),
-                                        Arrays.asList(files)));
-       // TODO make this work: requestParameters.put("f", new AResourceGroup(req.getParameter("f")));
- 
+//        requestParameters.put("f", new AResourceGroup(req.getQueryString(),
+//                                        Arrays.asList(files)));
+        requestParameters.put("f", new AResourceGroup(req.getParameter("f"),comboFileDelimeter));
+
         return true;
     }
-
 }

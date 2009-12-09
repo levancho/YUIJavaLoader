@@ -357,8 +357,8 @@ public class YUILoader {
             this.skin.put(YUI_PREFIX, "skin-");
 
             this.filters = new HashMap();
-            this.filters.put(YUI_RAW, new YUIFilter("-min\\.js", "\\.js"));
-            this.filters.put(YUI_DEBUG, new YUIFilter("-min\\.js", "-debug\\.js"));
+            this.filters.put(YUI_RAW, new YUIFilter("-min.js", ".js"));
+            this.filters.put(YUI_DEBUG, new YUIFilter("-min.js", "-debug.js"));
 
 
             Iterator it = this.modules.entrySet().iterator();
@@ -916,11 +916,17 @@ public class YUILoader {
         if (m.containsKey(YUI_SUBMODULES)) {
             logger.trace("M contains YUI_SUBMODULES " + YUI_SUBMODULES);
 
-            List<Map> submodules = (List<Map>) m.get(YUI_SUBMODULES);
+            Map submodules = (Map) m.get(YUI_SUBMODULES);
+
+            
             if (submodules != null && submodules.size() > 0) {
                 logger.trace(" submodules " + submodules);
 
-                for (Map submodule : submodules) {
+                 for (Iterator it = submodules.entrySet().iterator(); it.hasNext();) {
+                    Map.Entry pairs = (Map.Entry) it.next();
+                    String name = (String) pairs.getKey();
+                    Map submodule= (Map) pairs.getValue();
+                    
                     List subreqs = (List) submodule.get(YUI_REQUIRES);
                     if (subreqs != null && subreqs.size() > 0) {
                         logger.trace(" subreqs " + subreqs);
@@ -1617,6 +1623,8 @@ public class YUILoader {
         return url;
     }
 
+
+    public String ComboDelimeter = "&";
     public void addToCombo(String name, String type) {
         Map m = (Map) this.modules.get(name);
         String pathToModule = this.comboDefaultVersion + "/build/" + m.get(YUI_PATH);
@@ -1627,7 +1635,7 @@ public class YUILoader {
                 this.cssComboLocation = this.comboBase + pathToModule;
             } else {
                 //Prep for next component
-                this.cssComboLocation += "&" + pathToModule;
+                this.cssComboLocation += ComboDelimeter + pathToModule;
             }
 
         } else {
@@ -1636,7 +1644,7 @@ public class YUILoader {
                 this.jsComboLocation = this.comboBase + pathToModule;
             } else {
                 //Prep for next component
-                this.jsComboLocation += "&" + pathToModule;
+                this.jsComboLocation += ComboDelimeter + pathToModule;
             }
         }
     }

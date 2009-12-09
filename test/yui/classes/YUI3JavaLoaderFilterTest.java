@@ -33,14 +33,19 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author leo
  */
-public class YUIJavaLoaderBasicTest {
+public class YUI3JavaLoaderFilterTest {
+    YUILoader loader;
+    String yuiVersion;
+    Logger logger = LoggerFactory.getLogger(YUI3JavaLoaderFilterTest.class);
 
-    public YUIJavaLoaderBasicTest() {
+    public YUI3JavaLoaderFilterTest() {
     }
 
     @BeforeClass
@@ -53,23 +58,46 @@ public class YUIJavaLoaderBasicTest {
 
     @Before
     public void setUp() {
+        yuiVersion = System.getProperty("yui.version.3x");
+        if(yuiVersion==null)yuiVersion="3.0.0";
+        logger.info("[YUIJavaLoaderFilterTest] yuiversion is:"+yuiVersion);
+        loader = new YUILoader(yuiVersion);
+        logger.info("Creating YUILoader loader");
     }
 
     @After
     public void tearDown() {
     }
 
-    // TODO add test methods here.
-    // The methods must be annotated with annotation @Test. For example:
-    //
-    // @Test
-    // public void hello() {}
+
 
       @Test
-    public void testLoad() {
-
+    public void testRaw() {
+        loader.filter = YUILoader.YUI_RAW;
+        loader.load("overlay");
         // TODO review the generated test code and remove the default call to fail.
-        Assert.assertEquals(this, this);
+        String ret = loader.script();
+        Assert.assertTrue(ret.indexOf("-debug")==-1 && ret.indexOf("-min")==-1);
+    }
+
+
+     @Test
+    public void testMin() {
+        loader.filter = "";//min
+        loader.load("overlay");
+        String ret = loader.script();
+        Assert.assertTrue(ret.indexOf("-debug")==-1 && ret.indexOf("-min")!=-1);
+        // TODO review the generated test code and remove the default call to fail.
+    }
+
+
+      @Test
+    public void testDebug() {
+        loader.filter = YUILoader.YUI_DEBUG;
+        loader.load("overlay");
+        // TODO review the generated test code and remove the default call to fail.
+        String ret = loader.script();
+        Assert.assertTrue(ret.indexOf("-debug")!=-1 && ret.indexOf("-min")==-1);
     }
 
 }
