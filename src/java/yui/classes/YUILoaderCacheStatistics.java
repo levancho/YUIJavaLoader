@@ -98,7 +98,7 @@ public class YUILoaderCacheStatistics {
        
         List<String> k = cache.getKeys();
         for (String e : k) {
-             sb.append("<hr>");
+             sb.append("<br>");
             Element el = cache.get(e);
            
 
@@ -116,7 +116,6 @@ public class YUILoaderCacheStatistics {
 
                 sb.append("- ExpirationTime: " + formatDate(el.getExpirationTime()));
                        sb.append("<br>");
-               sb.append("<hr>");
             } else {
                 sb.append("<br>");
                 sb.append("Inconsistent/Missing Cache Element for: "+e);
