@@ -36,6 +36,7 @@
          <%=loader2.tags(null,false)%>
     </head>
     <body>
-        <h1>Hello World!</h1>
+
+    <a href="examples/index.html" >See Examples</a>
     </body>
 </html>

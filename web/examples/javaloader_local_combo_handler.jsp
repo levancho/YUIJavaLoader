@@ -13,7 +13,7 @@
     loader.combine = true;
    // loader.filter = YUILoader.YUI_DEBUG;
 
-    loader.comboBase="http://localhost:8084/YUIJavaLoader/combo?";
+    loader.comboBase="/YUIJavaLoader/combo?";
     loader.load("editor", "calendar", "container", "animation", "fonts");
     //Output the tags (this call would most likely be placed in the document head)
  %>

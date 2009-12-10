@@ -33,6 +33,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import yui.classes.Combo;
 import yui.classes.utils.HTTPUtils;
 
@@ -40,38 +42,39 @@ import yui.classes.utils.HTTPUtils;
  *
  * @author leo
  */
-public class ComboServlet  extends  HttpServlet{
+public class ComboServlet extends HttpServlet {
 
+    Logger logger = LoggerFactory.getLogger(ComboServlet.class);
 
     @Override
     public void init(ServletConfig config) throws ServletException {
+    }
 
+    @Override
+    public void doGet(HttpServletRequest request,
+            HttpServletResponse response)
+            throws ServletException, IOException {
+
+        try {
+            HTTPUtils.detectBrowser(request);
+            Combo combo = new Combo(request, response);
+            PrintWriter out = response.getWriter();
+            out.write(combo.getRaw());
+            out.flush();
+            out.close();
+        } catch (IOException ioe) {
+
+            logger.debug(ioe.getMessage());
+            ioe.printStackTrace();
+        }
 
     }
 
     @Override
-      public void doGet(HttpServletRequest request,
-                    HttpServletResponse response)
-      throws ServletException, IOException {
-
-
-     HTTPUtils.detectBrowser(request);
-     Combo combo = new Combo(request,response);
-
-
-    PrintWriter out = response.getWriter();
-    out.write(combo.getRaw());
-
-
-
-  }
-        @Override
-      public void doPost(HttpServletRequest request,
-                    HttpServletResponse response)
-      throws ServletException, IOException {
-                        // TODO only get supported
-            response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Post  is not Allowed");
-  }
-
-
+    public void doPost(HttpServletRequest request,
+            HttpServletResponse response)
+            throws ServletException, IOException {
+        // TODO only get supported
+        response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Post  is not Allowed");
+    }
 }

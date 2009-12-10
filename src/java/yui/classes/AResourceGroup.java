@@ -32,13 +32,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
-import javax.activation.MimetypesFileTypeMap;
 import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import yui.classes.utils.HTTPUtils;
 
 /**
+ * Resource Group represents an Entity that groups two or more resources under
+ * common Name, currently common name is QueryString but it will change.
+ * this is usefulyl to effectively cache whole resource and avoide queryString parsing, etc
+ * on future request as long as queryStrings match, this also allows easy addition on
+ * cache busting functionalities to force reparse by ust modifying queryString.
+ *
  * expected format of the resource is following :
  * version_String+relative_path+resourceAlias+resourceFileName.ext
  * example:
@@ -80,7 +85,7 @@ public class AResourceGroup {
         parseRequest(request);
     }
 
-   public AResourceGroup(String queryStringIdentifier, List<String> items) {
+   AResourceGroup(String queryStringIdentifier, List<String> items) {
         //parseRequest(request);
         this.queryString = queryStringIdentifier;
         this._group = items;
@@ -164,6 +169,7 @@ public class AResourceGroup {
     }
 
     /**
+     * group of resources (their names) that are part of this class
      * @return the _group
      */
     public List<String> getGroup() {
@@ -171,6 +177,8 @@ public class AResourceGroup {
     }
 
     /**
+     * meta informtion of resource, which is :
+     * version, type debug, raw,min  etc ...
      * @return the metaInfo
      */
     public String[] getMetaInfo() {

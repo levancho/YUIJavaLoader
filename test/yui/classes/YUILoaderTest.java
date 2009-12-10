@@ -75,37 +75,7 @@ public class YUILoaderTest {
         loader = null;
     }
 
-   
-
-    /**
-     * Test of setProcessedModuleType method, of class YUILoader.
-     */
-    @Test
-    public void testSetProcessedModuleType_0args() {
-        logger.info("setProcessedModuleType");
-        loader.setProcessedModuleType();
-
-        assertTrue(loader.hasProcessedModuleType(YUILoader.MODULE_TYPE.ALL));
-    }
-
-    /**
-     * Test of setProcessedModuleType method, of class YUILoader.
-     */
-    @Test
-    public void testSetProcessedModuleType_String() {
-        logger.info("setProcessedModuleType");
-        String moduleType = "";
-        
-        loader.setProcessedModuleType(YUILoader.MODULE_TYPE.ALL);
-
-        assertTrue(loader.hasProcessedModuleType());
-
-    }
-
  
-
- 
-
     /**
      * Test of script method, of class YUILoader.
      */

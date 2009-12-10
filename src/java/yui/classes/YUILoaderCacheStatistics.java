@@ -35,7 +35,7 @@ import net.sf.ehcache.Element;
 import net.sf.ehcache.Statistics;
 
 /**
- *
+ * Utility class that gathers information about cache, its members, and hit/mis ration etc ..
  * @author leo
  */
 public class YUILoaderCacheStatistics {

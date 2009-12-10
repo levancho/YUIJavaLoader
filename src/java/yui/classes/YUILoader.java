@@ -52,20 +52,49 @@ import yui.classes.utils.HTTPUtils;
 import yui.classes.utils.IOUtils;
 
 /**
- *
+ * The YUI Java loader base class which provides dynamic server-side loading for YUI
+ * It is a port of YUI PHP loader
+ * 
+ * YUI Java loader is Used to specify JavaScript and CSS module requirements.  It maintains a dependency
+ * tree for these modules so when a module is requested, all of the other modules it
+ * depends on are included as well.  By default, the YUI Library is configured, and
+ * other modules and their dependencies can be added.
+ * 
+ * @see http://developer.yahoo.com/yui/phploader/
  * @author leo
  */
 public class YUILoader {
-
+    Logger logger = LoggerFactory.getLogger(YUILoader.class);
     public boolean cacheBuster = true;
 
+    /**
+     * OUTPUT_TYPE enum that specifies all possible
+     * output types supported
+     */
     public enum OUTPUT_TYPE {
-
+        /**
+         * Full JSON output type
+         */
         YUI_FULLJSON("FULLJSON"),
+        /**
+         * Data output type as JSON
+         */
         YUI_DATA("DATA"),
+        /**
+         * JSON output type
+         */
         YUI_JSON("JSON"),
+        /**
+         * combined html tags <script> and  <link>
+         */
         YUI_TAGS("TAGS"),
+        /**
+         * EMBED output type
+         */
         YUI_EMBED("EMBED"),
+        /**
+         * Raw output type direct js or css code
+         */
         YUI_RAW("RAW");
 
         OUTPUT_TYPE(String _name) {
@@ -83,6 +112,11 @@ public class YUILoader {
         }
     }
 
+    /**
+     * MODULE_TYPE enum that specifies all possible
+     * module types supported
+     * currently only css and js
+     */
     public enum MODULE_TYPE {
 
         ALL("ALL"),
@@ -105,7 +139,8 @@ public class YUILoader {
 
         }
     }
-    Logger logger = LoggerFactory.getLogger(YUILoader.class);
+
+
     public static final String YUI_AFTER = "after";
     public static final String YUI_BASE = "base";
     // public static final String YUI_CSS = "css";
@@ -146,68 +181,123 @@ public class YUILoader {
     public static final String YUI_TYPE = "type";
     public static final String YUI_URL = "url";
     /* public api variables TODO add set/get methods */
-    public String base="";
-    public String filter = "";
-    public String target;
-    public boolean isCacheEnabled;
-    public boolean combine;
-    public boolean allowRollups;
-    public boolean loadOptional;
-    public boolean rollupsToTop;
-    private Map processedModuleTypes = new HashMap();
-    // all required modules
-    private Map requests = new LinkedHashMap();
-    // modules that have been been outputted via getLink()
-    private Map loaded = new HashMap();
-    // list of all modules superceded by the list of required modules
-    private List<String> superceded;
-    // module load count to catch circular dependencies
-    // private  List<String> loadCount;
-    // keeps track of modules that were requested that are not defined
-    private Map undefined = new HashMap();
 
-    public int howManyUndefined() {
-        return undefined.size();
-    }
-    private boolean dirty = true;
-    private Map sorted = new LinkedHashMap();
-    private List accountedFor = new ArrayList();
+    /**
+    * The base directory
+    */
+    public String base="";
+
+    /**
+    * A filter to apply to result urls. This filter will modify the default path for
+    * all modules. The default path is the minified version of the files (e.g., event-min.js).
+    * Changing the filter alows for picking up the unminified (raw) or debug sources.
+    * The default set of valid filters are:  YUI_DEBUG & YUI_RAW
+    */
+    public String filter = "";
+    /**
+     * Map of filters keys & filter replacement rules (YUIFilter Objects).
+     * Used with filter.
+     *
+     */
+    private Map filters = new HashMap();
     /**
      * A list of modules to apply the filter to.  If not supplied, all
      * modules will have any defined filters applied.  Tip: Useful for debugging.
-     * @property filterList
-     * @type array
-     * @default null
      */
     private List<String> filterList = new ArrayList<String>();
-    // the list of required skins
-    private Map skins = new HashMap();
-    private Map modules = new HashMap();
-    private String fullCacheKey;
-    private Map baseOverrides = new HashMap();
-    private boolean delayCache = false;
-    private String versionKey = "_yuiversion";
-    // the skin definition
-    private Map skin = new HashMap();
-    private Map rollupModules = new LinkedHashMap();
-    private List globalModules = new ArrayList();
-    private Map satisfactionMap = new HashMap();
-    private Map depCache = new HashMap();
-    private Map filters = new HashMap();
+
+
     /**
-     * The base path to the combo service.  Uses the Yahoo! CDN service by default.
-     * You do not have to set this property to use the combine option. YUI PHP Loader ships
-     * with an intrinsic, lightweight combo-handler as well (see combo.php).
-     * @property comboBase
-     * @type string
-     * @default http://yui.yahooapis.com/combo?
+    * Should we allow rollups
+    */
+    public boolean allowRollups;
+    /**
+    * Whether or not to load optional dependencies for the requested modules
+    */
+    public boolean loadOptional;
+
+
+    /**
+    * Force rollup modules to be sorted as moved to the top of
+    * the stack when performing an automatic rollup.  This has a very small performance consequence.
+    * TODO: NOT TESTED
+    */
+    public boolean rollupsToTop;
+
+    /**
+    * The first time we output a module type we allow automatic rollups, this
+    * array keeps track of module types we have processed
+    */
+    private Map processedModuleTypes = new HashMap();
+
+    // all required modules
+    private Map requests = new LinkedHashMap();
+
+    // modules that have been been outputted via getLink()/ getComboLink()
+    private Map loaded = new HashMap();
+
+    // list of all modules superceded by the list of required modules
+    private List<String> superceded;
+
+    /**
+     * keeps track of modules that were requested that are not defined
      */
-    public String comboBase = "http://yui.yahooapis.com/combo?";
-    // additional vars used to assist with combo handling
-    private String cssComboLocation = null;
-    private String jsComboLocation = null;
-    private String comboDefaultVersion;
-    private JSONObject yui_current;
+    private Map undefined = new HashMap();
+
+    /**
+     * Number modules that were requested that are not defined
+     * @return
+     */
+    public int howManyUndefined() {
+        return undefined.size();
+    }
+
+    // module load count to catch circular dependencies
+    // private  List<String> loadCount;
+
+    /**
+     * Used to determine if additional sorting of dependencies is required
+     */
+    private boolean dirty = true;
+
+    /**
+     * List of sorted modules
+     * 
+     */
+    private Map sorted = new LinkedHashMap();
+    
+    /**
+     * List of modules the loader has aleady accounted for
+     */
+    private List accountedFor = new ArrayList();
+
+
+
+    /**
+     * the list of required skins
+     */
+    private Map skins = new HashMap();
+
+    /**
+     * Contains the available module metadata
+     */
+    private Map modules = new HashMap();
+
+    /**
+     * cache key (currently ehcache only)
+     */
+    private String fullCacheKey;
+
+    /**
+     * List of modules that have had their base pathes overridden
+     */
+    private Map baseOverrides = new HashMap();
+
+    /**
+     * Used to delay caching of module data
+     */
+    private boolean delayCache = false;
+
 
     /* If the version is set, a querystring parameter is appended to the
      * end of all generated URLs.  This is a cache busting hack for environments
@@ -217,13 +307,80 @@ public class YUILoader {
      * @default null
      */
     private String yuiVersion = "";
+    private String versionKey = "_yuiversion";
+
+    /**
+     * Holds the calculated skin definition
+     */
+    private Map skin = new HashMap();
+
+    /**
+     * Holds the module rollup metadata
+     */
+    private Map rollupModules = new LinkedHashMap();
+
+    /**
+     * Holds global module information.  Used for global dependency support.
+     * Note: Does not appear to be in use by recent metadata.  Might be deprecated?
+     * 
+     */
+    private List globalModules = new ArrayList();
+
+    /**
+     *  Holds information about what modules satisfy the requirements of others
+     */
+    private Map satisfactionMap = new HashMap();
+
+    /**
+     *
+     * Holds a cached(memory cached, not ehcached) module dependency list
+     */
+    private Map depCache = new HashMap();
+
+    /**
+     * Combined into a single request using the combo service to pontentially reduce the number of
+     * http requests required.  This option is not supported when loading custom modules,
+     * TODO: Will be supported later on.
+     */
+    public boolean combine;
+
+    /**
+     * The base path to the combo service.  Uses the Yahoo! CDN service by default.
+     * You do not have to set this property to use the combine option. YUI PHP Loader ships
+     * with an intrinsic, lightweight combo-handler as well (see combo.php).
+     * @property comboBase
+     * @type string
+     * @default http://yui.yahooapis.com/combo?
+     */
+    public String comboBase = "http://yui.yahooapis.com/combo?";
+
+    /**
+     * Holds the current combo url for the loaded CSS resources.  This is
+    *  built with addToCombo and retrieved with getComboLink.  Only used when the combine
+    *  is enabled.
+     */
+    private String cssComboLocation = null;
+
+    /**
+     *  Holds the current combo url for the loaded JavaScript resources.  This is
+    * built with addToCombo and retrieved with getComboLink.  Only used when the combine
+     */
+    private String jsComboLocation = null;
+
+    // private stuff and undocumented
+    private String comboDefaultVersion;
+    private JSONObject yui_current;
     private Map userSuppliedModules;
     private boolean _noYUI;
     private String _jsonConfigFilePrefix = "config";
     private String _jsonConfigFile;
-    CacheManager cacheManager;
+    protected CacheManager cacheManager;
     private boolean customModulesInUse;
 
+
+
+    public String target;
+    public boolean isCacheEnabled;
     YUILoader() {
     }
 
@@ -475,6 +632,10 @@ public class YUILoader {
         return cache;
     }
 
+    /**
+     * Used to load YUI and/or custom components 
+     * @param arguments
+     */
     public void load(String... arguments) {
 
         for (String arg : arguments) {
@@ -484,40 +645,40 @@ public class YUILoader {
 
     /**
      * Used to mark a module type as processed
-     * @method setProcessedModuleType
-     * @param string $moduleType
+     * this method defaults to MODULE_TYPE.ALL
      */
-    public void setProcessedModuleType() {
+    private void setProcessedModuleType() {
         this.setProcessedModuleType(MODULE_TYPE.ALL);
     }
 
     /**
      * Used to mark a module type as processed
-     * @method setProcessedModuleType
-     * @param string $moduleType
+     * @param moduleType
      */
-    public void setProcessedModuleType(MODULE_TYPE moduleType) {
+    private void setProcessedModuleType(MODULE_TYPE moduleType) {
         this.processedModuleTypes.put(moduleType + "", true);
     }
 
     /**
      * Used to determine if a module type has been processed
-     * @method hasProcessedModuleType
-     * @param string $moduleType
+     * this method defaults to: MODULE_TYPE.ALL
      */
-    public boolean hasProcessedModuleType() {
+    private boolean hasProcessedModuleType() {
         return hasProcessedModuleType(MODULE_TYPE.ALL);
     }
 
     /**
      * Used to determine if a module type has been processed
-     * @method hasProcessedModuleType
-     * @param string $moduleType
+     * @param moduleType
      */
-    public boolean hasProcessedModuleType(MODULE_TYPE moduleType) {
+    private boolean hasProcessedModuleType(MODULE_TYPE moduleType) {
         return this.processedModuleTypes.containsKey(moduleType + "");
     }
 
+    /**
+     * Used to specify modules that are already on the page that should not be loaded again
+     * @param args
+     */
     public void setLoaded(String... args) {
 
         logger.trace(" [setLoaded]  arguments " + Arrays.toString(args));
@@ -652,10 +813,10 @@ public class YUILoader {
     }
 
     /**
+     *
      * Loads the requested module
-     * @method loadSingle
-     * @param string $name the name of a module to load
-     * @return {boolean}
+     * @param name module the name of a module to load
+     * @return
      */
     public boolean loadSingle(String name) {
 
@@ -688,8 +849,7 @@ public class YUILoader {
 
     /**
      * Used to output each of the required script tags
-     * @method script
-     * @return {string}
+     * @return String representation of script tags
      */
     public String script() {
         return this.tags(MODULE_TYPE.JS, false);
@@ -699,8 +859,7 @@ public class YUILoader {
 
     /**
      * Used to output each of the required link tags
-     * @method css
-     * @return {string} (e.g.)
+     *  @return String representation of link(css) tags
      */
     public String css() {
         return this.tags(MODULE_TYPE.CSS, false);
@@ -708,10 +867,9 @@ public class YUILoader {
 
     /**
      * Used to output each of the required html tags (i.e.) script or link
-     * @method tags
-     * @param {string} moduleType Type of html tag to return (i.e.) js or css.  Default is both.
-     * @param {boolean} skipSort
-     * @return {string}
+     * @param moduleType Type of html tag to return (i.e.) js or css.  Default is both.
+     * @param skipSort turn off sorting.
+     * @return String representation of  tags (script or link)
      */
     public String tags(MODULE_TYPE moduleType, boolean skipSort) {
 
@@ -720,10 +878,9 @@ public class YUILoader {
 
     /**
      * Used to output each of the required html tags (i.e.) script or link
-     * @method tags
-     * @param {string} moduleType Type of html tag to return (i.e.) js or css.  Default is both.
-     * @param {boolean} skipSort
-     * @return {string}
+     * defaults to both css and js tags.
+     * @param skipSort turn off sorting.
+     * @return String representation of  tags (script or link)
      */
     public String tags() {
         // return this.processDependencies(YUI_TAGS, null, false, false);
@@ -733,8 +890,7 @@ public class YUILoader {
 
     /**
      * Used to embed the raw JavaScript inline
-     * @method script_embed
-     * @return {string} Returns the script tag(s) with the JavaScript inline
+     * @return Returns the script tag(s) with the JavaScript inline
      */
     public String script_embed() {
         return this.embed(MODULE_TYPE.JS, false);
@@ -742,8 +898,7 @@ public class YUILoader {
 
     /**
      * Used to embed the raw CSS
-     * @method css_embed
-     * @return {string} (e.g.) Returns the style tag(s) with the CSS inline
+     * @return  (e.g.) Returns the style tag(s) with the CSS inline
      */
     public String css_embed() {
         return this.embed(MODULE_TYPE.CSS, false);
@@ -751,10 +906,9 @@ public class YUILoader {
 
     /**
      * Used to output each of the required html tags inline (i.e.) script and/or style
-     * @method embed
-     * @param {string} moduleType Type of html tag to return (i.e.) js or css.  Default is both.
-     * @param {boolean} skipSort
-     * @return {string} Returns the style tag(s) with the CSS inline and/or the script tag(s) with the JavaScript inline
+     * @param moduleType Type of html tag to return (i.e.) js or css.  Default is both.
+     * @param skipSort
+     * @return Returns the style tag(s) with the CSS inline and/or the script tag(s) with the JavaScript inline
      */
     public String embed(MODULE_TYPE moduleType, boolean skipSort) {
 
@@ -763,8 +917,7 @@ public class YUILoader {
 
     /**
      * Used to fetch an array of the required JavaScript components
-     * @method script_data
-     * @return {array} Returns an array of data about each of the identified JavaScript components
+     * @return Returns Map of data about each of the identified JavaScript components
      */
     public Map script_data() {
         return this.data(MODULE_TYPE.JS, false, false);
@@ -772,20 +925,19 @@ public class YUILoader {
 
     /**
      * Used to fetch an array of the required CSS components
-     * @method css_data
-     * @return {array} Returns an array of data about each of the identified JavaScript components
+     * @return Returns Map of data about each of the identified JavaScript components
      */
     public Map css_data() {
         return this.data(MODULE_TYPE.CSS, false, false);
     }
 
     /**
-     * Used to output an Array which contains data about the required JavaScript & CSS components
+     * Used to output Map which contains data about the required JavaScript & CSS components
      * @method data
-     * @param {string} moduleType Type of html tag to return (i.e.) js or css.  Default is both.
-     * @param {boolean} allowRollups
-     * @param {boolean} skipSort
-     * @return {string}
+     * @param moduleType Type of html tag to return (i.e.) js or css.  Default is both.
+     * @param allowRollups
+     * @param skipSort
+     * @return Returns Map of data about each of the identified  components
      */
     public Map data(MODULE_TYPE moduleType, boolean allowRollups, boolean skipSort) {
         if (allowRollups) {
@@ -817,20 +969,31 @@ public class YUILoader {
 
     /**
      * Used to fetch a JSON object with the required JavaScript components
-     * @method script_json
-     * @return {string} Returns a JSON object containing urls for each JavaScript component
+     * @return Returns a JSON String containing urls for each JavaScript component
      */
     public String script_json() {
         Map json =(Map) this.json(MODULE_TYPE.CSS, false, false, false);
         return JSONValue.toJSONString(json);
     }
 
+    /**
+     * Used to fetch a JSON object with the required css components
+     * @return Returns a JSON String containing urls for each JavaScript component
+     */
     public String css_json() {
 
         Map json = this.json(MODULE_TYPE.CSS, false, false, false);
         return JSONValue.toJSONString(json);
     }
 
+    /**
+     * Used to fetch a JSON object with the required JavaScript and CSS components
+     * @param moduleType
+     * @param allowRollups
+     * @param skipSort
+     * @param full
+     * @return Returns a JSON Map with the required JavaScript and CSS components
+     */
     public Map json(MODULE_TYPE moduleType, boolean allowRollups, boolean skipSort, boolean full) {
         if (allowRollups) {
             this.setProcessedModuleType(moduleType);
@@ -847,17 +1010,32 @@ public class YUILoader {
 
     }
 
+    /**
+    * Used to produce the raw JavaScript code inline without the actual script tags
+    * @return Returns the raw JavaScript code inline without the actual script tags
+    */
     public String script_raw() {
         return this.raw(MODULE_TYPE.JS, false, false);
     }
 
+    /**
+    * Used to produce the raw CSS code inline without the actual style tags
+    * @return Returns the raw CSS code inline without the actual style tags
+    */
     public String css_raw() {
         return this.raw(MODULE_TYPE.CSS, false, false);
     }
-
+    /**
+     * Used to produce the raw Javacript and CSS code inline without the actual script or style tags
+     * @param moduleType
+     * @param allowRollups
+     * @param skipSort
+     * @return Returns the raw JavaScript and/or CSS code inline without the actual style tags
+     */
     public String raw(MODULE_TYPE moduleType, boolean allowRollups, boolean skipSort) {
         return (String)this.processDependencies(OUTPUT_TYPE.YUI_RAW, moduleType, skipSort, false);
     }
+
 
     private void accountFor(String name) {
         logger.debug("adding " + name);
@@ -872,6 +1050,7 @@ public class YUILoader {
         }
     }
 
+    //Used during dependecy processing to prune modules from the list of modules requiring further processing
     private Map prune(Map deps, MODULE_TYPE moduleType) {
 
         if (moduleType != null) {
@@ -1090,8 +1269,8 @@ public class YUILoader {
     /**
      * Used to override the base dir for specific set of modules (Note: not supported when using the combo service)
      * @method overrideBase
-     * @param {string} base Base path (e.g.) 2.6.0/build
-     * @param {array} modules Module names of which to override base
+     * @param base Base path (e.g.) 2.6.0/build
+     * @param modules Module names of which to override base
      */
     public void overrideBase(String base, List<String> modules) {
 
@@ -1751,7 +1930,7 @@ public class YUILoader {
      * Retrieve the contents of a remote resource
      * @method getRemoteContent
      * @param {string} url URL to fetch data from
-     * @return
+     * @return string
      */
     public String getRemoteContent(String urlString) {
         logger.debug("[getRemoteContent] getting Remote Content for url" + urlString);

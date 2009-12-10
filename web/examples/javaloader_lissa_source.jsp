@@ -62,10 +62,12 @@
         <%=css%>
     </head>
     <body>
+         <a href="http://github.com/levancho/YUIJavaLoader/blob/master/web/examples/javaloader_lissa_source.jsp"   target="_blank" > Source</a>
         <h1>Lissa</h1>
         <h2>YUI Java Loader + Minify: Keep the combo!</h2>
+        <h4 style="color:red">NOTE: Implementation of minify Servlet is not done yet, so urls will not work. this demo just shows functionality of Lissa</h4>
 
-        <p><a href="http://developer.yahoo.com/yui/phploader/">The YUI Java Loader Utility</a> is designed, of course, to
+        <p>The YUI Java Loader Utility is designed, of course, to
             help you put YUI components on the page.  While the YUI Java Loader is great at loading YUI resources it is important
             to point out that it can also be a great resource for loading custom non-YUI JavaScript and CSS resources on the page
             as well.  These can be mixed in with YUI dependencies and/or be all custom modules.</p>
@@ -83,18 +85,20 @@
             <li class="first">This list starts with one static list item</li>
         </ul>
 
-        <p>The combo urls built by Lissa for this page where:</p>
-        <form>
-            <textarea class="ta" rows="10" cols="100"><%=css%> \n\r <%=js%></textarea>
+        <p>The combo urls built by Lissa for this page:</p>
+        <form><div style="font-weight: bold" >CSS:</div>
+            <textarea class="ta" rows="4" cols="100"><%=css%></textarea>
+            <div style="font-weight: bold" >JS:</div>
+            <textarea  class="ta" rows="4" cols="100"><%=js%></textarea>
         </form>
 
         <br>
             <p><em>NOTES:</em></p>
 
             <ul>
-                <li>This example is very similar to one shipped with the YUI Java Loader.  The major diference is the use of Lissa instead of using the
-                    YAHOO_util_Loader class directly.  Doing so allows us to create combo urls which mix YUI resources with local ones.</li>
-                <li>Lissa is open source.  Get the code on <a href="http://github.com/cauld/lissa">Github</a>.</li>
+                <li>This example is very similar to one  with the YUI Java Loader.  The major diference is the use of Lissa instead of using the
+                    YUILoader class directly.  Doing so allows us to create combo urls which mix YUI resources with local ones.</li>
+                <li>Lissa class is Part of YUILoader project, so difference is just instantiating Lissa instead of YUILoader</li>
                 <li>Enjoy!</li>
             </ul>
 

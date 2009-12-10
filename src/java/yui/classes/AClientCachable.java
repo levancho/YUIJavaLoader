@@ -26,7 +26,6 @@
  */
 package yui.classes;
 
-import com.twmacinta.util.MD5;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -37,10 +36,12 @@ import org.slf4j.LoggerFactory;
 import yui.classes.utils.HTTPUtils;
 
 /**
- *
+ * Abstract Class to be used by extendor to provide cline side cachability, where client side
+ * means Most of the times User's Browser, it provides custom implementations of equals and compareTo
+ * methods comparing two resources on their midification date, and etag values
  * @author leo
  */
-public class AClientCachable implements Comparable<AClientCachable>, Cloneable, Externalizable {
+public abstract class AClientCachable implements Comparable<AClientCachable>, Cloneable, Externalizable {
    private static final Logger logger =LoggerFactory.getLogger(HTTPUtils.class);
 
    private String eTagPrefix;
@@ -48,20 +49,33 @@ public class AClientCachable implements Comparable<AClientCachable>, Cloneable, 
 
    private long  modified;
 
-  public String getEtag() {
+  /**
+   * Etag representation of this resource
+   * @return String etag value
+   */
+   public String getEtag() {
        return eTagPrefix+fileSize;
    }
 
+  /**
+   * Modified date of this resource.
+   * @return
+   */
    public long getModified() {
        return modified;
    }
 
+  /**
+   * This constructor will set modified date of this resource
+   * to be same as time of its execution ussing:
+   * System.currentTimeMillis()
+   */
   public  AClientCachable () {
       this(0, System.currentTimeMillis());
       logger.warn("[Default Constructor Should not Be used");
   }
 
-   public  AClientCachable (long filesizeParam,long modifiedParam   ) {
+   public  AClientCachable (long filesizeParam,long modifiedParam ) {
         this(filesizeParam,modifiedParam,HTTPUtils.getDefaultEtagPrefix());
    }
 
@@ -71,7 +85,13 @@ public class AClientCachable implements Comparable<AClientCachable>, Cloneable, 
     this.eTagPrefix = eTagPrefixParam;
    }
 
-  
+      /**
+       * Compares this to o based on their, modified Date objects,
+       * (truncating milliseconds to 0). and their Etag Values compared as pure Strings.
+       *
+       * @param o
+       * @return
+       */
       public int compareTo(AClientCachable o) {
           logger.trace("[compareTo] this "+this + "  to" +o);
             String oTag = o.getEtag();
@@ -90,7 +110,12 @@ public class AClientCachable implements Comparable<AClientCachable>, Cloneable, 
             }
     }
 
-
+    /**
+     *   checks for equality between this and o, based on their, modified Date objects,
+       * (truncating milliseconds to 0); and their Etag Values compared as pure Strings.
+     * @param o
+     * @return bollean
+     */
     @Override
       public boolean equals(Object o){
         logger.trace("[equals]  this=["+this + "] o= ["+o+ "] ");
