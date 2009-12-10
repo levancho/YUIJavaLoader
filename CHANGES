@@ -1,6 +1,17 @@
 ChangeLog
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+0.7.0-Alpha
+    * Fixed Bug with JSON type outputs not being sorted.
+    * splited sotDependencies to sotDependenciesAsJson and sotDependenciesAsString,(still needs more refactoring)
+    * Fixed bug with submodules loop casting incorrect type from Modules.
+    * Added Test Cases for Filter,and Output Types
+    * added Image correction regexps missing from Combo .
+    * Renamed YUI_Utils_LOader to YUILoader .
+    * removed PageContext parameter from Loader .
+    * fixed bug with raw CSS not getting accumilated in jsno List .
+    * Fixed NPE when cache expiration occured.
+
 0.3.0-Alpha
     * Initial release
 

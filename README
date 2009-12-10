@@ -1,14 +1,4 @@
-yuiJavaloader README
-The YUI Java Loader is deriviative work of YUI PHP Loader Located @
 
-YUI PHP Loader Project home page:
-    http://developer.yahoo.com/yui/phploader
-
-YUI PHP Loader Source code:
-    http://github.com/yui/phploader
-
-YUI PHP Loader Issue tracker:
-    http://yuilibrary.com/projects/phploader
 
 
 The YUI Java Loader Utility is a server-side utility that allows you to
@@ -31,6 +21,7 @@ YUIJavaloader Source code:
 
 YUIJavaloader Issue tracker:
     http://github.com/levancho/YUIJavaLoader/issues
+
     
 Files:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -49,5 +40,23 @@ THIRDPARY
 
 license.txt
     Open source license details.
+
+
+CREDITS:
+The YUI Java Loader is deriviative work and fully Based  off YUI PHP Loader
+All Future bug fixes will be aligned with PHPLoader untill First GA Release.
+
+YUI PHP Loader Project is Located@
+
+YUI PHP Loader Project home page:
+    http://developer.yahoo.com/yui/phploader
+
+YUI PHP Loader Source code:
+    http://github.com/yui/phploader
+
+YUI PHP Loader Issue tracker:
+    http://yuilibrary.com/projects/phploader
+
+Please also see THIRDPARY for all  other opensource projects use in YUI Java Loader
 
 

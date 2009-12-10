@@ -27,6 +27,8 @@
 
 package yui.classes;
 
+import java.util.Map;
+import org.json.simple.JSONAware;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -114,6 +116,8 @@ public class YUILoaderTest {
         // lame but still better than nothing for now.
         String result = loader.script();
         assertNotNull(result);
+
+
   
     }
 
@@ -123,13 +127,37 @@ public class YUILoaderTest {
     @Test
     public void testCss() {
         logger.info("css");
-        
           // lame but still better than nothing for now.
         String result = loader.css();
         assertNotNull(result);
     }
 
-     @Test
+
+    /**
+     * Test of css method, of class YUILoader.
+     */
+    @Test
+    public void script_data() {
+        logger.info("script_data");
+
+          // lame but still better than nothing for now.
+        Map result = loader.script_data();
+        assertNotNull(result);
+        assertTrue(Map.class.isAssignableFrom(result.getClass()));
+    }
+
+
+    @Test
+    public void css_data() {
+        logger.info("css_data");
+          // lame but still better than nothing for now.
+        Map result = loader.css_data();
+        assertNotNull(result);
+        assertTrue(Map.class.isAssignableFrom(result.getClass()));
+    }
+
+
+    @Test
     public void testNoUndefined() {
         logger.info("css");
         assertEquals(loader.howManyUndefined(), 0);

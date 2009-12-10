@@ -43,6 +43,7 @@ import net.sf.ehcache.Element;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
@@ -55,6 +56,8 @@ import yui.classes.utils.IOUtils;
  * @author leo
  */
 public class YUILoader {
+
+    public boolean cacheBuster = true;
 
     public enum OUTPUT_TYPE {
 
@@ -76,7 +79,7 @@ public class YUILoader {
         }
 
         public boolean isJSONType() {
-            return (this.toString().indexOf("JSON") != -1);
+            return ((this.toString().indexOf("JSON") != -1) || this.equals(YUI_DATA));
         }
     }
 
@@ -143,7 +146,7 @@ public class YUILoader {
     public static final String YUI_TYPE = "type";
     public static final String YUI_URL = "url";
     /* public api variables TODO add set/get methods */
-    public String base;
+    public String base="";
     public String filter = "";
     public String target;
     public boolean isCacheEnabled;
@@ -535,7 +538,7 @@ public class YUILoader {
                     this.loaded.put(supname, supname);
                 }
                 String forEnum = (String) ((Map) mod).get(YUI_TYPE);
-                logger.info("Found EnumString module type" + forEnum);
+                logger.info("Found EnumString module type: " + forEnum);
 
                 this.setProcessedModuleType(MODULE_TYPE.getValue(forEnum));
 
@@ -712,7 +715,7 @@ public class YUILoader {
      */
     public String tags(MODULE_TYPE moduleType, boolean skipSort) {
 
-        return this.processDependencies(OUTPUT_TYPE.YUI_TAGS, moduleType, skipSort, false);
+        return (String)this.processDependencies(OUTPUT_TYPE.YUI_TAGS, moduleType, skipSort, false);
     }
 
     /**
@@ -755,7 +758,7 @@ public class YUILoader {
      */
     public String embed(MODULE_TYPE moduleType, boolean skipSort) {
 
-        return this.processDependencies(OUTPUT_TYPE.YUI_EMBED, moduleType, skipSort, false);
+        return (String)this.processDependencies(OUTPUT_TYPE.YUI_EMBED, moduleType, skipSort, false);
     }
 
     /**
@@ -792,14 +795,23 @@ public class YUILoader {
         // TOCO cache
 
         OUTPUT_TYPE type = OUTPUT_TYPE.YUI_DATA;
-        String res = this.processDependencies(type, moduleType, skipSort, false);
-        try {
-            JSONObject obj = (JSONObject) parser.parse(res);
-            return obj;
-        } catch (ParseException ex) {
-            throw new RuntimeException("I am sorry but, I am unable to Parse String" + res + " to JSONObject");
-        } catch (Exception ex) {
-            throw new RuntimeException("something went wrong" + res + " to JSONObject");
+        Object res = this.processDependencies(type, moduleType, skipSort, false);
+
+
+        if(res instanceof Map){
+            logger.info("We got JSNO object");
+            return (Map)res;
+        }else {
+             throw new RuntimeException("This should not happen, processDependencies should Return Map instead it Returned: "+res.getClass());
+//                logger.info("REMOVE this");
+//            try {
+//                JSONObject obj = (JSONObject) parser.parse((String)res);
+//                return obj;
+//            } catch (ParseException ex) {
+//
+//            } catch (Exception ex) {
+//                throw new RuntimeException("something went wrong" + res + " to JSONObject");
+//            }
         }
     }
 
@@ -809,14 +821,17 @@ public class YUILoader {
      * @return {string} Returns a JSON object containing urls for each JavaScript component
      */
     public String script_json() {
-        return this.json(MODULE_TYPE.CSS, false, false, false);
+        Map json =(Map) this.json(MODULE_TYPE.CSS, false, false, false);
+        return JSONValue.toJSONString(json);
     }
 
     public String css_json() {
-        return this.json(MODULE_TYPE.CSS, false, false, false);
+
+        Map json = this.json(MODULE_TYPE.CSS, false, false, false);
+        return JSONValue.toJSONString(json);
     }
 
-    public String json(MODULE_TYPE moduleType, boolean allowRollups, boolean skipSort, boolean full) {
+    public Map json(MODULE_TYPE moduleType, boolean allowRollups, boolean skipSort, boolean full) {
         if (allowRollups) {
             this.setProcessedModuleType(moduleType);
         }
@@ -828,7 +843,7 @@ public class YUILoader {
             type = OUTPUT_TYPE.YUI_FULLJSON;
         }
 
-        return this.processDependencies(type, moduleType, skipSort, false);
+        return (Map)this.processDependencies(type, moduleType, skipSort, false);
 
     }
 
@@ -841,7 +856,7 @@ public class YUILoader {
     }
 
     public String raw(MODULE_TYPE moduleType, boolean allowRollups, boolean skipSort) {
-        return this.processDependencies(OUTPUT_TYPE.YUI_RAW, moduleType, skipSort, false);
+        return (String)this.processDependencies(OUTPUT_TYPE.YUI_RAW, moduleType, skipSort, false);
     }
 
     private void accountFor(String name) {
@@ -1389,44 +1404,22 @@ public class YUILoader {
 
     // TODO refactor into this
     private String processDependenciesAsString(OUTPUT_TYPE outputType, MODULE_TYPE moduleType, boolean skipSort, boolean showLoaded) {
-        return processDependencies(outputType, moduleType, skipSort, showLoaded);
-    }
-
-    // TODO refactor into this
-    private JSONObject processDependenciesAsJSON(OUTPUT_TYPE outputType, MODULE_TYPE moduleType, boolean skipSort, boolean showLoaded) {
-        return null;
-        // return processDependencies(outputType,  moduleType, skipSort,showLoaded);
-    }
-
-    public String processDependencies(OUTPUT_TYPE outputType, MODULE_TYPE moduleType, boolean skipSort, boolean showLoaded) {
-
-        if (outputType == null) {
-            throw new RuntimeException(" outputType can no tbe Null " + outputType);
-        }
-        StringBuffer html = new StringBuffer();
-
-        if ((moduleType == null) && (!outputType.isJSONType() && OUTPUT_TYPE.YUI_DATA != outputType)) {
-            this.delayCache = true;
-            String css = processDependencies(outputType, MODULE_TYPE.CSS, skipSort, showLoaded);
-            String js = processDependencies(outputType, MODULE_TYPE.JS, skipSort, showLoaded);
-            logger.debug("CSS dependencies are :" + css);
-            logger.debug("JS dependencies are :" + js);
-
-            this.updateCache();
-
-            return (css + js);
-        } else {
-            this.delayCache = false;
+         if (outputType == null || (outputType.isJSONType())) {
+            throw new RuntimeException(" outputType can not be Null or non String type, JSON types are not proccessed by this method: " + outputType);
         }
 
-        Map json = new JSONObject();
         Map _sorted = new HashMap();
+        StringBuffer html = new StringBuffer();
+        
 
         if (showLoaded || (!this.dirty && this.sorted.size() > 0)) {
             _sorted = this.prune(this.sorted, moduleType);
         } else {
             _sorted = this.sortDependencies(moduleType, skipSort);
         }
+
+        logger.info("------------------SORTED-------------------------");
+        logger.info("--[" +_sorted+"]-");
 
         logger.debug("-------------------------------------------");
         logger.debug("dependencies moduleType  :" + moduleType + "  output type " + outputType);
@@ -1445,39 +1438,6 @@ public class YUILoader {
 
                     case YUI_RAW:
                         html.append(this.getRaw(name));
-                        break;
-
-                    case YUI_JSON:
-                    case YUI_DATA:
-                        //html.append(this.getRaw(name));
-                        //TODO TASk need to verify this
-
-                        String subdeps = (String) dep.get(YUI_TYPE);
-                        String _url = this.getUrl(name);
-                        List prov = this.getProvides(name);
-                        Map subsubsub = new HashMap();
-                        subsubsub.put(_url, prov);
-                        Object m = json.get(subdeps);
-                        if (m != null) {
-                            ((Map) m).putAll(subsubsub);
-                        } else {
-                            json.put(subdeps, subsubsub);
-                        }
-                        break;
-
-                    case YUI_FULLJSON:
-                        String _name = (String) dep.get(YUI_NAME);
-                        logger.info("name for Dep " + dep + " is " + _name);
-
-                        Map item = new HashMap();
-                        item.put(YUI_TYPE, dep.get(YUI_TYPE));
-                        item.put(YUI_URL, dep.get(YUI_URL));
-                        item.put(YUI_PROVIDES, dep.get(YUI_TYPE));
-                        item.put(YUI_REQUIRES, dep.get(YUI_TYPE));
-                        item.put(YUI_OPTIONAL, dep.get(YUI_TYPE));
-                        json.put(_name, item);
-                        logger.info("name for Dep " + json.size());
-                        logger.info("name for Dep " + json);
                         break;
                     case YUI_TAGS:
                     default:
@@ -1498,20 +1458,12 @@ public class YUILoader {
 
         }
 
-        // TODO there is a bug if we try to load same resource secod time
-        // inside loaded and never gets fetched so JSOn is emtyp need to fix.
-        // right now I just check for NPE
+
         if (!this.delayCache) {
             this.updateCache();
         }
 
-        if (!json.isEmpty()) {
-            if (this.canJSON()) {
-                html.append(json.toString());
-            } else {
-                html.append("Can not ENCODE to JSON, this should not happen");
-            }
-        }
+      
 
         // after the first pass we no longer try to use meta modules
         this.setProcessedModuleType(moduleType);
@@ -1522,9 +1474,6 @@ public class YUILoader {
             this.clearComboLink(moduleType);
         }
 
-        if (outputType.equals(OUTPUT_TYPE.YUI_DATA)) {
-            return json.toString();
-        }
 
         if (this.undefined.size() > 0) {
             html.append("<!-- The following modules were requested but are not defined: ");
@@ -1533,8 +1482,244 @@ public class YUILoader {
             html.append("-->\n");
         }
 
-
         return html.toString();
+
+    }
+
+    // TODO refactor into this
+    private Map processDependenciesAsJSON(OUTPUT_TYPE outputType, MODULE_TYPE moduleType, boolean skipSort, boolean showLoaded) {
+        if (outputType == null || (!outputType.isJSONType())) {
+            throw new RuntimeException(" outputType can not be Null or non JSON type: " + outputType);
+        }
+
+        Map json = new LinkedHashMap();
+        Map _sorted = new HashMap();
+
+        if (showLoaded || (!this.dirty && this.sorted.size() > 0)) {
+            _sorted = this.prune(this.sorted, moduleType);
+        } else {
+            _sorted = this.sortDependencies(moduleType, skipSort);
+        }
+
+        logger.info("------------------SORTED-------------------------");
+        logger.info("--[" +_sorted+"]-");
+
+        logger.debug("-------------------------------------------");
+        logger.debug("dependencies moduleType  :" + moduleType + "  output type " + outputType);
+
+        Iterator it = _sorted.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry pairs = (Map.Entry) it.next();
+            String name = (String) pairs.getKey();
+            if (showLoaded || !this.loaded.containsKey(name)) {
+                Map dep = (Map) this.modules.get(name);
+                //String modTypeString  =(String)  dep.get(YUI_TYPE);
+                switch (outputType) {
+                    case YUI_JSON:
+                    case YUI_DATA:
+                        //html.append(this.getRaw(name));
+                        //TODO TASk need to verify this
+
+                        String subdeps = (String) dep.get(YUI_TYPE);
+                        String _url = this.getUrl(name);
+                        List prov = this.getProvides(name);
+                        Map subsubsub = new LinkedHashMap();
+                        subsubsub.put(_url, prov);
+                        Object m = json.get(subdeps);
+                        if (m != null) {
+                            ((Map) m).putAll(subsubsub);
+                        } else {
+                            json.put(subdeps, subsubsub);
+                        }
+
+                        logger.info("JSOn for YUI_JSON or YUI_DATA is" +json.toString());
+                        break;
+
+                    case YUI_FULLJSON:
+                        String _name = (String) dep.get(YUI_NAME);
+                        logger.info("name for Dep " + dep + " is " + _name);
+
+                        Map item = new HashMap();
+                        item.put(YUI_TYPE, dep.get(YUI_TYPE));
+                        item.put(YUI_URL, dep.get(YUI_URL));
+                        item.put(YUI_PROVIDES, dep.get(YUI_TYPE));
+                        item.put(YUI_REQUIRES, dep.get(YUI_TYPE));
+                        item.put(YUI_OPTIONAL, dep.get(YUI_TYPE));
+                        json.put(_name, item);
+                        logger.info("name for Dep " + json.size());
+                        logger.info("JSOn for YUI_FULLJSON is" +json.toString());
+                        break;
+                    default:
+                        throw new RuntimeException("Invalid outputType for processDependenciesAsJSON " + outputType);
+                }
+            }
+
+        }
+       this.updateCache();
+
+        if (!json.isEmpty()) {
+            if (this.canJSON()) {
+                logger.info("JSON DEBUG"+json.toString());
+            }
+        }else {
+
+            logger.info("JSON Object was empty");
+        }
+
+        // after the first pass we no longer try to use meta modules
+        this.setProcessedModuleType(moduleType);
+
+        this.loaded.putAll(_sorted);
+        return json;
+    }
+
+    private Object processDependencies(OUTPUT_TYPE outputType, MODULE_TYPE moduleType, boolean skipSort, boolean showLoaded) {
+
+        if (outputType == null) {
+            throw new RuntimeException(" outputType can not be " + outputType);
+        }
+
+        if ((moduleType == null) && (!outputType.isJSONType())) {
+            String css = (String)processDependenciesAsString(outputType, MODULE_TYPE.CSS, skipSort, showLoaded);
+            String js = (String)processDependenciesAsString(outputType, MODULE_TYPE.JS, skipSort, showLoaded);
+            logger.debug("CSS dependencies are :" + css);
+            logger.debug("JS dependencies are :" + js);
+            this.updateCache();
+            return (css + js);
+        }
+
+        Object retVal = null;
+            switch (outputType) {
+                    case YUI_DATA:
+                    case YUI_JSON:
+                    case YUI_FULLJSON:
+                       retVal = processDependenciesAsJSON(outputType, moduleType, skipSort, showLoaded);
+                     break;
+                default:
+                       retVal = processDependenciesAsString(outputType, moduleType, skipSort, showLoaded);
+                break;
+            }
+
+          return retVal;
+//        Map json = new JSONObject();
+//        Map _sorted = new HashMap();
+//
+//        if (showLoaded || (!this.dirty && this.sorted.size() > 0)) {
+//            _sorted = this.prune(this.sorted, moduleType);
+//        } else {
+//            _sorted = this.sortDependencies(moduleType, skipSort);
+//        }
+//
+//        logger.debug("-------------------------------------------");
+//        logger.debug("dependencies moduleType  :" + moduleType + "  output type " + outputType);
+//
+//        Iterator it = _sorted.entrySet().iterator();
+//        while (it.hasNext()) {
+//            Map.Entry pairs = (Map.Entry) it.next();
+//            String name = (String) pairs.getKey();
+//            if (showLoaded || !this.loaded.containsKey(name)) {
+//                Map dep = (Map) this.modules.get(name);
+//                String modTypeString  =(String)  dep.get(YUI_TYPE);
+//                switch (outputType) {
+//                    case YUI_EMBED:
+//                        html.append(this.getContent(name, MODULE_TYPE.getValue(modTypeString)));
+//                        break;
+//
+//                    case YUI_RAW:
+//                        html.append(this.getRaw(name));
+//                        break;
+//
+//                    case YUI_JSON:
+//                    case YUI_DATA:
+//                        //html.append(this.getRaw(name));
+//                        //TODO TASk need to verify this
+//
+//                        String subdeps = (String) dep.get(YUI_TYPE);
+//                        String _url = this.getUrl(name);
+//                        List prov = this.getProvides(name);
+//                        Map subsubsub = new HashMap();
+//                        subsubsub.put(_url, prov);
+//                        Object m = json.get(subdeps);
+//                        if (m != null) {
+//                            ((Map) m).putAll(subsubsub);
+//                        } else {
+//                            json.put(subdeps, subsubsub);
+//                        }
+//
+//                        break;
+//
+//                    case YUI_FULLJSON:
+//                        String _name = (String) dep.get(YUI_NAME);
+//                        logger.info("name for Dep " + dep + " is " + _name);
+//
+//                        Map item = new HashMap();
+//                        item.put(YUI_TYPE, dep.get(YUI_TYPE));
+//                        item.put(YUI_URL, dep.get(YUI_URL));
+//                        item.put(YUI_PROVIDES, dep.get(YUI_TYPE));
+//                        item.put(YUI_REQUIRES, dep.get(YUI_TYPE));
+//                        item.put(YUI_OPTIONAL, dep.get(YUI_TYPE));
+//                        json.put(_name, item);
+//                        logger.info("name for Dep " + json.size());
+//                        logger.info("name for Dep " + json);
+//                        break;
+//                    case YUI_TAGS:
+//                    default:
+//
+//                        if (this.combine == true && !this.customModulesInUse) {
+//
+//                            this.addToCombo(name, MODULE_TYPE.getValue(modTypeString));
+//                            html = new StringBuffer();
+//                            html.append(this.getComboLink(MODULE_TYPE.getValue(modTypeString)));
+//                            //logger.info("combo html"+html.toString());
+//                        } else {
+//                            html.append(this.getLink(name, MODULE_TYPE.getValue(modTypeString)));
+//                            html.append("\n");
+//                        }
+//                        break;
+//                }
+//            }
+//
+//        }
+//
+//        // TODO there is a bug if we try to load same resource secod time
+//        // inside loaded and never gets fetched so JSOn is emtyp need to fix.
+//        // right now I just check for NPE
+//        if (!this.delayCache) {
+//            this.updateCache();
+//        }
+//
+//        if (!json.isEmpty()) {
+//            if (this.canJSON()) {
+//                html.append(json.toString());
+//
+//                logger.info("JSON DEBUG"+html.toString());
+//            } else {
+//                html.append("Can not ENCODE to JSON, this should not happen");
+//            }
+//        }
+//
+//        // after the first pass we no longer try to use meta modules
+//        this.setProcessedModuleType(moduleType);
+//
+//        this.loaded.putAll(_sorted);
+//
+//        if (this.combine) {
+//            this.clearComboLink(moduleType);
+//        }
+//
+//        if (outputType.equals(OUTPUT_TYPE.YUI_DATA)) {
+//            return json.toString();
+//        }
+//
+//        if (this.undefined.size() > 0) {
+//            html.append("<!-- The following modules were requested but are not defined: ");
+//            html.append("\n");
+//            html.append(this.undefined);
+//            html.append("-->\n");
+//        }
+//
+//
+//        return html.toString();
     }
 
     public boolean canJSON() {
@@ -1613,7 +1798,6 @@ public class YUILoader {
         String url = "";
 
         String b = this.base;
-
         if (this.baseOverrides.containsKey(name)) {
             b = (String) this.baseOverrides.get(name);
         }
@@ -1643,7 +1827,8 @@ public class YUILoader {
 
         }
 
-        if (this.yuiVersion != null && !yuiVersion.trim().equals("")) {
+
+        if (this.cacheBuster && this.yuiVersion != null && !yuiVersion.trim().equals("")) {
             String pre = (url.indexOf("?") == -1) ? "?" : "&";
             url += (pre + this.versionKey + "=" + this.yuiVersion);
         }
