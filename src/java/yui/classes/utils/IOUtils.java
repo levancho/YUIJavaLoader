@@ -91,49 +91,6 @@ public class IOUtils extends org.apache.commons.io.IOUtils {
         return "";
     }
 
-    public static void main(String args[]) {
-        if (args.length != 1) {
-            logger.debug("Usage: java FastStreamCopy filename");
-            System.exit(1);
-        }
-
-        NumberFormat digits = NumberFormat.getInstance();
-        digits.setMaximumFractionDigits(3);
-
-        long before;
-        long after;
-        double slowTime;
-        double fastTime;
-        double speedUp;
-
-        String filename = args[0];
-        String contents;
-
-// Slow method
-        logger.debug("Reading file " + args[0] + " using slow method");
-        before = System.currentTimeMillis(); // Start timing
-// contents = slowStreamCopy(filename);
-        contents = readFile(filename);
-        after = System.currentTimeMillis(); // End timing
-        slowTime = after - before;
-// logger.debug("File's contents:\n" + contents);
-
-// Fast method
-        logger.debug("Reading file " + args[0] + " using fast method");
-        before = System.currentTimeMillis(); // Start timing
-        contents = readFile(filename);
-        after = System.currentTimeMillis(); // End timing
-        fastTime = after - before;
-// logger.debug("File's contents:\n" + contents);
-
-// Comparison
-        speedUp = 100d * slowTime / fastTime;
-        logger.debug("Slow method required " + slowTime + " ms.");
-        logger.debug("Fast method required " + fastTime + " ms.");
-        logger.debug("Speed up = " + digits.format(speedUp) + "% ");
-        logger.debug(speedUp > 100 ? "Good!" : "Bad!");
-    }
-
     /**
      *
      * good for Large Files >2Mb

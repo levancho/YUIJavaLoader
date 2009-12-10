@@ -63,6 +63,8 @@ import yui.classes.AClientCachable;
  * @author leo
  *
  * TODO response.addHeader("Vary", "Accept-Encoding"); // Handle proxies
+ *
+ * 
  */
 public class HTTPUtils {
 
