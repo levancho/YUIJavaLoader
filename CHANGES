@@ -1,6 +1,11 @@
 ChangeLog
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+0.7.4-Alpha
+    * Added CustomModule which makes it easier to create custommodules vs duing it with hasmap and list seperately.
+    * import cleanup
+ 
+
 0.7.0-Alpha
     * Fixed Bug with JSON type outputs not being sorted.
     * splited sotDependencies to sotDependenciesAsJson and sotDependenciesAsString,(still needs more refactoring)
