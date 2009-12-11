@@ -11,35 +11,20 @@
 
             //Create a custom module metadata set
             java.util.Map customModules = new java.util.LinkedHashMap();
-            java.util.Map _sub = new java.util.LinkedHashMap();
 
+            CustomModule c = new CustomModule("customJS","js");
+            c.setFullpath("includes/js/example.js");
+            c.addRequires("event","dom","json");
+            customModules.put(c.getName(), c);
 
-            _sub = new java.util.LinkedHashMap();
-            _sub.put("name", "customJS");
-            _sub.put("type", "js");
-            _sub.put("fullpath", "includes/js/example.js");
-            java.util.List req = new java.util.ArrayList();
-            req.add("event");
-            req.add("dom");
-            req.add("json");
-            _sub.put("requires", req);
-            customModules.put("customJS", _sub);
+            c = new CustomModule("sampleData","js");
+            c.setFullpath("includes/js/sample_data.js");
+            c.addRequires("customJS");
+            customModules.put(c.getName(), c);
 
-            _sub = new java.util.LinkedHashMap();
-            _sub.put("name", "sampleData");
-            _sub.put("type", "js");
-            _sub.put("fullpath", "includes/js/sample_data.js");
-            req = new java.util.ArrayList();
-            req.add("customJS");
-            _sub.put("requires", req);
-            customModules.put("sampleData", _sub);
-
-            _sub = new java.util.LinkedHashMap();
-            _sub.put("name", "customCSS");
-            _sub.put("type", "css");
-            _sub.put("fullpath", "includes/css/example.css");
-            customModules.put("customCSS", _sub);
-
+            c = new CustomModule("customCSS","css");
+            c.setFullpath("includes/css/example.css");
+            customModules.put(c.getName(), c);
 
 
             Lissa loader = new Lissa("2.8.0r4", "lissa", customModules);

@@ -10,24 +10,16 @@
     <%
 //Create a custom module metadata set
     java.util.Map customModules = new java.util.LinkedHashMap();
-    java.util.Map _sub = new java.util.LinkedHashMap();
 
-    _sub = new java.util.LinkedHashMap();
-    _sub.put("name", "customJS");
-    _sub.put("type", "js");
-    _sub.put("fullpath", "./assets/custom/data.js");
-        java.util.List req = new java.util.ArrayList();
-        req.add("event");
-        req.add("dom");
-        req.add("json");
-     _sub.put("requires",req);
-     customModules.put("customJS", _sub);
+    CustomModule c = new CustomModule("customJS","js");
+    c.setFullpath("./assets/custom/data.js");
+    c.addRequires("event","dom","json");
+    customModules.put(c.getName(), c);
 
-     _sub = new java.util.LinkedHashMap();
-    _sub.put("name", "customCSS");
-    _sub.put("type", "css");
-    _sub.put("fullpath", "./assets/custom/custom.css");
-     customModules.put("customCSS", _sub);
+    c = new CustomModule("customCSS","css");
+    c.setFullpath("./assets/custom/custom.css");
+    customModules.put(c.getName(), c);
+
 
 
 //Get a new YAHOO_util_Loader instance which includes just our custom metadata (No YUI metadata)
