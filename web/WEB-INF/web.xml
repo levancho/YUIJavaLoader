@@ -8,7 +8,7 @@
     <servlet>
         <description>Minifies, and comresses requested, css and js files</description>
         <servlet-name>minify</servlet-name>
-        <servlet-class>yui.classes.servlets.MinifyServlet</servlet-class>
+        <servlet-class>com.amostudio.jminify.servlets.MinifyServlet</servlet-class>
         <init-param>
             <description>default delimeter for combined url pattern,
             e.g  f=fileone.js,filetwo.js
@@ -16,30 +16,24 @@
             <param-name>comboFileDelimeter</param-name>
             <param-value>,</param-value>
         </init-param>
-
-         <init-param>
+        <init-param>
             <description>default location of resources</description>
             <param-name>defaultResourceRoot</param-name>
             <param-value>/lib</param-value>
         </init-param>
-        
-         <init-param>
+        <init-param>
             <description>enable or disable gzip compression
             </description>
             <param-name>compressionEnabled</param-name>
             <param-value>true</param-value>
         </init-param>
-        
-         <init-param>
-            <description>allow debugging, this is just a switch, 
+        <init-param>
+            <description>allow debugging, this is just a switch,
                          debug parameter still needs to be included into url
             </description>
             <param-name>debugEnabled</param-name>
             <param-value>true</param-value>
         </init-param>
-
-
-
     </servlet>
     <servlet-mapping>
         <servlet-name>combo</servlet-name>
